@@ -60,15 +60,31 @@ export function Navbar() {
         <Flex align="center" gap={4}>
           <HStack gap={2}>
             <Text fontSize="sm" fontWeight="medium">User:</Text>
-            <NativeSelect.Root size="sm" width="200px">
+            <NativeSelect.Root size="sm" minW="200px">
               <NativeSelect.Field 
                 value={selectedUserId} 
                 onChange={handleUserChange}
+                bg="white"
+                color="#1a202c"
+                borderColor="gray.300"
+                _dark={{ 
+                  bg: 'gray.700',
+                  color: 'gray.100',
+                  borderColor: 'gray.600'
+                }}
+                css={{
+                  '& option': {
+                    backgroundColor: 'white',
+                    color: '#1a202c',
+                  },
+                }}
               >
-                <option value="">Select a user...</option>
+                <option value="" disabled>
+                  Select a user...
+                </option>
                 {users.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.name}
+                    {user.displayName}
                   </option>
                 ))}
               </NativeSelect.Field>

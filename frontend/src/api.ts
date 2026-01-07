@@ -34,7 +34,7 @@ export async function reindexData(): Promise<string> {
 
 export interface User {
   id: string;
-  name: string;
+  displayName: string;
   username: string;
   email: string;
 }

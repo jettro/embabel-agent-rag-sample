@@ -3,6 +3,8 @@ package dev.jettro.knowledge;
 import com.embabel.agent.api.identity.SimpleUser;
 import com.embabel.agent.api.identity.User;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private final static Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private static final List<User> USERS = List.of(
             new SimpleUser("jettro", "Jettro", "jettro", "jettro@example.org"),
@@ -27,6 +30,8 @@ public class UserController {
 
     @PostMapping("/{id}")
     public String selectUser(@PathVariable("id") String id, HttpSession session) {
+        logger.info("Selected user: {}", id);
+
         Optional<User> user = USERS.stream()
                 .filter(u -> u.getId().equals(id))
                 .findFirst();
