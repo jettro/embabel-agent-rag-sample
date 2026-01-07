@@ -1,0 +1,11 @@
+### Ask question
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "message": "Did Jettro give an overview of the year 2025 in one of the blogs?"
+}
+
+### Ingest new data
+
+POST localhost:8080/ingest
