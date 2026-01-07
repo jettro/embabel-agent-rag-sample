@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static dev.jettro.knowledge.ChatController.CONVERSATION_ID_SESSION_ATTRIBUTE;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -37,6 +39,9 @@ public class UserController {
                 .findFirst();
         
         user.ifPresent(u -> session.setAttribute("user", u));
+
+        session.setAttribute(CONVERSATION_ID_SESSION_ATTRIBUTE, null);
+
         return "User selected: " + id;
     }
 }
