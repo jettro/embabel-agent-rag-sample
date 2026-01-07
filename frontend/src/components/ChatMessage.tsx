@@ -1,4 +1,4 @@
-import { Box, Text, HStack, Avatar } from '@chakra-ui/react';
+import { Box, Text, HStack } from '@chakra-ui/react';
 import type { ChatMessage as ChatMessageType } from '../api';
 
 interface ChatMessageProps {
@@ -15,27 +15,20 @@ export function ChatMessage({ message }: ChatMessageProps) {
       w="full"
       mb={4}
     >
-      {!isUser && (
-        <Avatar.Root size="sm" bg="blue.500" color="white">
-          <Avatar.Fallback>A</Avatar.Fallback>
-        </Avatar.Root>
-      )}
       <Box
         maxW="70%"
         bg={isUser ? 'blue.500' : 'gray.100'}
-        color={isUser ? 'white' : 'gray.800'}
+        color={isUser ? 'white' : undefined}
         px={4}
         py={3}
         borderRadius="lg"
         boxShadow="sm"
+        _dark={{
+          bg: isUser ? 'blue.600' : 'gray.700',
+        }}
       >
         <Text whiteSpace="pre-wrap">{message.content}</Text>
       </Box>
-      {isUser && (
-        <Avatar.Root size="sm" bg="gray.500" color="white">
-          <Avatar.Fallback>U</Avatar.Fallback>
-        </Avatar.Root>
-      )}
     </HStack>
   );
 }

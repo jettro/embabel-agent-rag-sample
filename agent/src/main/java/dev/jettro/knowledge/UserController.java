@@ -26,11 +26,12 @@ public class UserController {
     }
 
     @PostMapping("/{id}")
-    public void selectUser(@PathVariable("id") String id, HttpSession session) {
+    public String selectUser(@PathVariable("id") String id, HttpSession session) {
         Optional<User> user = USERS.stream()
                 .filter(u -> u.getId().equals(id))
                 .findFirst();
         
         user.ifPresent(u -> session.setAttribute("user", u));
+        return "User selected: " + id;
     }
 }

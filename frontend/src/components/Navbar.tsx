@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import logo from '../assets/logo-jettrodev.png';
 import { fetchUsers, selectUser } from '../api';
 import type { User } from '../api';
+import { ColorModeButton } from './ui/color-mode';
 
 export function Navbar() {
   const [users, setUsers] = useState<User[]>([]);
@@ -42,9 +43,7 @@ export function Navbar() {
     <Box 
       px={6} 
       py={3} 
-      borderBottom="1px" 
-      borderColor="gray.200"
-      bg="white" 
+      borderBottomWidth="1px"
       w="full"
     >
       <Flex align="center">
@@ -54,24 +53,19 @@ export function Navbar() {
           h="40px" 
           mr={4} 
         />
-        <Heading size="md" color="gray.800">
+        <Heading size="md">
           Knowledge Agent
         </Heading>
         <Spacer />
         <Flex align="center" gap={4}>
           <HStack gap={2}>
-            <Text fontSize="sm" fontWeight="medium" color="gray.600">User:</Text>
+            <Text fontSize="sm" fontWeight="medium">User:</Text>
             <NativeSelect.Root size="sm" width="200px">
               <NativeSelect.Field 
-                placeholder="Select a user..." 
                 value={selectedUserId} 
                 onChange={handleUserChange}
-                color="gray.800"
-                bg="gray.50"
-                borderColor="gray.300"
-                _hover={{ borderColor: "gray.400" }}
-                _focus={{ borderColor: "blue.500", bg: "white" }}
               >
+                <option value="">Select a user...</option>
                 {users.map(user => (
                   <option key={user.id} value={user.id}>
                     {user.name}
@@ -81,6 +75,7 @@ export function Navbar() {
               <NativeSelect.Indicator />
             </NativeSelect.Root>
           </HStack>
+          <ColorModeButton />
         </Flex>
       </Flex>
     </Box>

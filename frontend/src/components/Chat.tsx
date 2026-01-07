@@ -64,19 +64,18 @@ export function Chat() {
   };
 
   return (
-    <VStack gap={0} flex={1} overflow="hidden">
+    <VStack gap={0} flex={1} h="full" overflow="hidden">
       {/* Messages area */}
       <Box
         flex={1}
         w="full"
         overflowY="auto"
-        bg="white"
         px={8}
         py={6}
       >
         {messages.length === 0 ? (
           <Center h="full">
-            <Text color="gray.400" fontSize="lg">
+            <Text fontSize="lg" color="gray.400">
               Start a conversation...
             </Text>
           </Center>
@@ -87,8 +86,8 @@ export function Chat() {
             ))}
             {isLoading && (
               <HStack justify="flex-start" mb={4}>
-                <Spinner size="sm" color="blue.500" />
-                <Text color="gray.500" fontSize="sm">
+                <Spinner size="sm" colorPalette="blue" />
+                <Text fontSize="sm">
                   Assistant is thinking...
                 </Text>
               </HStack>
@@ -101,10 +100,7 @@ export function Chat() {
       {/* Input area */}
       <Box
         w="full"
-        borderTop="1px"
-        borderColor="gray.200"
-        bg="white"
-        color="gray.800"
+        borderTopWidth="1px"
         p={6}
       >
         <HStack gap={3} maxW="4xl" mx="auto">
@@ -115,8 +111,6 @@ export function Chat() {
             placeholder="Type your message..."
             size="lg"
             variant="outline"
-            bg="gray.50"
-            _focus={{ bg: 'white', borderColor: 'blue.500' }}
             disabled={isLoading}
           />
           <IconButton

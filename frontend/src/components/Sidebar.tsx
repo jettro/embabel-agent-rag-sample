@@ -26,13 +26,14 @@ export function Sidebar() {
     <Box
       w="280px"
       bg="gray.50"
-      borderRight="1px"
-      borderColor="gray.200"
+      _dark={{ bg: 'gray.800' }}
+      borderRightWidth="1px"
       p={6}
+      h="full"
     >
       <VStack gap={6} align="stretch">
         <VStack gap={3} align="stretch">
-          <Heading size="sm" color="gray.600">
+          <Heading size="sm">
             Actions
           </Heading>
           <Button
