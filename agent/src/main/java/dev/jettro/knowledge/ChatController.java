@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -89,8 +90,8 @@ public class ChatController {
     public String ingestData() {
         var dataPath = Path.of("./data");
         int count = 0;
-        try (var stream = java.nio.file.Files.list(dataPath)) {
-            var files = stream.filter(java.nio.file.Files::isRegularFile).toList();
+        try (var stream = Files.list(dataPath)) {
+            var files = stream.filter(Files::isRegularFile).toList();
             for (Path file : files) {
                 var fileUri = file.toAbsolutePath().toUri().toString();
                 var ingested = NeverRefreshExistingDocumentContentPolicy.INSTANCE.ingestUriIfNeeded(
