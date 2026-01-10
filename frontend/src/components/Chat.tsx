@@ -16,9 +16,10 @@ import { FiArrowUp } from 'react-icons/fi';
 
 interface ChatProps {
   selectedUserId?: string;
+  onProcessIdChange?: (processId: string | null) => void;
 }
 
-export function Chat({ selectedUserId }: ChatProps) {
+export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +51,7 @@ export function Chat({ selectedUserId }: ChatProps) {
       const response = await initializeSession(userId);
       setConversationId(response.conversationId);
       setProcessId(response.processId);
+      onProcessIdChange?.(response.processId);
       setMessages([]);
     } catch (error) {
       alert(`Error initializing session: ${error instanceof Error ? error.message : 'Failed to initialize'}`);
@@ -74,6 +76,7 @@ export function Chat({ selectedUserId }: ChatProps) {
     try {
       const response = await sendChatMessage(input, conversationId);
       setProcessId(response.procesId);
+      onProcessIdChange?.(response.procesId);
       const assistantMessage: ChatMessageType = {
         role: 'assistant',
         content: response.answer,
