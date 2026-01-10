@@ -3,52 +3,55 @@ package dev.jettro.knowledge;
 import com.embabel.agent.api.channel.*;
 import com.embabel.agent.api.identity.SimpleUser;
 import com.embabel.agent.api.identity.User;
-import com.embabel.agent.rag.ingestion.NeverRefreshExistingDocumentContentPolicy;
-import com.embabel.agent.rag.ingestion.TikaHierarchicalContentReader;
-import com.embabel.agent.rag.lucene.LuceneSearchOperations;
 import com.embabel.chat.ChatSession;
 import com.embabel.chat.Chatbot;
 import com.embabel.chat.UserMessage;
+import dev.jettro.knowledge.model.InitSessionRequest;
+import dev.jettro.knowledge.model.InitSessionResponse;
 import dev.jettro.knowledge.model.Request;
+import dev.jettro.knowledge.model.Response;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 @RestController
+@RequestMapping("/chat")
 public class ChatController {
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
     public static final String CONVERSATION_ID_SESSION_ATTRIBUTE = "conversationId";
 
     private final Chatbot chatbot;
-    private final LuceneSearchOperations searchOperations;
 
-    public ChatController(Chatbot chatbot, LuceneSearchOperations searchOperations) {
+    public ChatController(Chatbot chatbot) {
         this.chatbot = chatbot;
-        this.searchOperations = searchOperations;
     }
 
-    @PostMapping("/chat")
-    public String chat(@RequestBody Request request, HttpSession session) {
+    @PostMapping(value = "/init", consumes = "application/json")
+    public InitSessionResponse initialiseSession(@RequestBody InitSessionRequest request) {
+        logger.info("Received request to initialise session for user: {}", request.userId());
+
+        // TODO fetch user object
+        User user = new SimpleUser(request.userId(), request.userId(), request.userId(), request.userId() + "@example.org");
+        ChatSession chatSession = createOrFetchSession(request.conversationId(), user);
+
+        return new InitSessionResponse(chatSession.getConversation().getId(), chatSession.getProcessId());
+    }
+
+    @PostMapping(value = "/message", consumes = "application/json")
+    public Response chat(@RequestBody Request request) {
         logger.info("Received message: {}", request.message());
 
-        // Read parameters from the HttpSession
-        User user = (User) session.getAttribute("user");
-        var conversationId = session.getAttribute(CONVERSATION_ID_SESSION_ATTRIBUTE);
+        var conversationId = request.conversationId();
 
         // Load the ChatSession using the conversationId or create a new one
-        ChatSession chatSession = createOrFetchSession(conversationId, user);
+        ChatSession chatSession = chatbot.findSession(conversationId);
+        if (chatSession == null) { throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);}
 
-        // Store the conversation ID in the session
-        session.setAttribute(CONVERSATION_ID_SESSION_ATTRIBUTE, chatSession.getConversation().getId());
-
+        // TODO Remove this in the end
         // Get hold of the output channel
         OutputChannel storedOutputChannel = chatSession.getOutputChannel();
         if (!(storedOutputChannel instanceof ControllerOutputChannel outputChannel)) {
@@ -59,7 +62,9 @@ public class ChatController {
         chatSession.onUserMessage(new UserMessage(request.message()));
 
         // Wait for the agent's response and return it
-        return outputChannel.waitForResponse(30, TimeUnit.SECONDS);
+        var assistantResponse = outputChannel.waitForResponse(30, TimeUnit.SECONDS);
+
+        return new Response(assistantResponse, chatSession.getProcessId());
     }
 
     @NotNull
@@ -86,28 +91,4 @@ public class ChatController {
         return chatSession;
     }
 
-    @PostMapping("/ingest")
-    public String ingestData() {
-        var dataPath = Path.of("./data");
-        int count = 0;
-        try (var stream = Files.list(dataPath)) {
-            var files = stream.filter(Files::isRegularFile).toList();
-            for (Path file : files) {
-                var fileUri = file.toAbsolutePath().toUri().toString();
-                var ingested = NeverRefreshExistingDocumentContentPolicy.INSTANCE.ingestUriIfNeeded(
-                        searchOperations,
-                        new TikaHierarchicalContentReader(),
-                        fileUri
-                );
-                if (ingested != null) {
-                    count++;
-                }
-            }
-        } catch (java.io.IOException e) {
-            logger.error("Error reading data directory", e);
-            return "Error reading data directory: " + e.getMessage();
-        }
-
-        return "Successfully ingested " + count + " files";
-    }
 }

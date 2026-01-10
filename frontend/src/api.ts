@@ -4,20 +4,56 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export async function sendChatMessage(message: string): Promise<string> {
-  const response = await fetch('/chat', {
+export interface InitSessionRequest {
+  userId: string;
+  conversationId?: string;
+}
+
+export interface InitSessionResponse {
+  conversationId: string;
+  processId: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  conversationId: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  procesId: string;
+}
+
+export async function initializeSession(userId: string, conversationId?: string): Promise<InitSessionResponse> {
+  const response = await fetch('/chat/init', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ userId, conversationId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to initialize session: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+export async function sendChatMessage(message: string, conversationId: string): Promise<ChatResponse> {
+  const response = await fetch('/chat/message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message, conversationId }),
   });
 
   if (!response.ok) {
     throw new Error(`Failed to send message: ${response.statusText}`);
   }
 
-  return await response.text();
+  return await response.json();
 }
 
 export async function reindexData(): Promise<string> {
@@ -40,18 +76,11 @@ export interface User {
 }
 
 export async function fetchUsers(): Promise<User[]> {
-  const response = await fetch('/users');
+  const response = await fetch('/users', {
+    method: 'GET',
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch users: ${response.statusText}`);
   }
   return await response.json();
-}
-
-export async function selectUser(userId: string): Promise<void> {
-  const response = await fetch(`/users/${userId}`, {
-    method: 'POST',
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to select user: ${response.statusText}`);
-  }
 }

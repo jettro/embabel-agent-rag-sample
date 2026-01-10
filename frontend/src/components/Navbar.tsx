@@ -10,11 +10,15 @@ import {
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import logo from '../assets/logo-jettrodev.png';
-import { fetchUsers, selectUser } from '../api';
+import { fetchUsers } from '../api';
 import type { User } from '../api';
 import { ColorModeButton } from './ui/color-mode';
 
-export function Navbar() {
+interface NavbarProps {
+  onUserSelect: (userId: string) => void;
+}
+
+export function Navbar({ onUserSelect }: NavbarProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
 
@@ -26,16 +30,11 @@ export function Navbar() {
     });
   }, []);
 
-  const handleUserChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const userId = e.target.value;
     setSelectedUserId(userId);
     if (userId) {
-      try {
-        await selectUser(userId);
-      } catch (err) {
-        alert('Failed to select user');
-        console.error(err);
-      }
+      onUserSelect(userId);
     }
   };
 

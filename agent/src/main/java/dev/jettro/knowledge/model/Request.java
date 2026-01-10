@@ -1,4 +1,4 @@
 package dev.jettro.knowledge.model;
 
-public record Request(String message) {
+public record Request(String message, String conversationId) {
 }
