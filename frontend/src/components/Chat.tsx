@@ -13,6 +13,7 @@ import type { ChatMessage as ChatMessageType } from '../api';
 import { sendChatMessage, initializeSession } from '../api';
 import { ChatMessage } from './ChatMessage';
 import { FiArrowUp } from 'react-icons/fi';
+import { useChatSSE } from '../hooks/useChatSSE';
 
 interface ChatProps {
   selectedUserId?: string;
@@ -27,6 +28,7 @@ export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
   const [processId, setProcessId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isConnected, error: sseError, onMessage } = useChatSSE(processId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -43,12 +45,28 @@ export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
     }
   }, [selectedUserId]);
 
+  // Set up SSE message handler
+  useEffect(() => {
+    onMessage((content: string) => {
+      const assistantMessage: ChatMessageType = {
+        role: 'assistant',
+        content,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setIsLoading(false);
+    });
+  }, [onMessage]);
+
   const handleInitializeSession = async (userId: string) => {
     if (!userId.trim()) return;
 
     setIsInitializing(true);
     try {
       const response = await initializeSession(userId);
+      console.log('Session initialized:', response);
+      console.log('ConversationId:', response.conversationId);
+      console.log('ProcessId:', response.processId);
       setConversationId(response.conversationId);
       setProcessId(response.processId);
       onProcessIdChange?.(response.processId);
@@ -74,18 +92,10 @@ export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(input, conversationId);
-      setProcessId(response.procesId);
-      onProcessIdChange?.(response.procesId);
-      const assistantMessage: ChatMessageType = {
-        role: 'assistant',
-        content: response.answer,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Just send the message, response will come via SSE
+      await sendChatMessage(input, conversationId);
     } catch (error) {
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to send message'}`);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -114,6 +124,20 @@ export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
                 {isInitializing ? 'Initializing session...' : 'Please select a user from the dropdown above'}
               </Text>
               {isInitializing && <Spinner size="lg" colorPalette="blue" />}
+            </VStack>
+          </Center>
+        ) : !isConnected ? (
+          <Center h="full">
+            <VStack gap={4}>
+              <Spinner size="lg" colorPalette="blue" />
+              <Text fontSize="lg" color="gray.400">
+                Connecting to chat stream...
+              </Text>
+              {sseError && (
+                <Text fontSize="sm" color="red.500">
+                  Error: {sseError}
+                </Text>
+              )}
             </VStack>
           </Center>
         ) : messages.length === 0 ? (

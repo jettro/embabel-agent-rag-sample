@@ -10,19 +10,23 @@ import dev.jettro.knowledge.model.InitSessionRequest;
 import dev.jettro.knowledge.model.InitSessionResponse;
 import dev.jettro.knowledge.model.Request;
 import dev.jettro.knowledge.model.Response;
-import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
-    public static final String CONVERSATION_ID_SESSION_ATTRIBUTE = "conversationId";
+
+    // Map from processId to a list of SseEmitters
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<SseEmitter>> processEmitters =
+            new ConcurrentHashMap<>();
 
     private final Chatbot chatbot;
 
@@ -35,10 +39,46 @@ public class ChatController {
         logger.info("Received request to initialise session for user: {}", request.userId());
 
         // TODO fetch user object
-        User user = new SimpleUser(request.userId(), request.userId(), request.userId(), request.userId() + "@example.org");
+        User user = new SimpleUser(request.userId(), request.userId(), request.userId(), request.userId() + "@example" +
+                ".org");
+
         ChatSession chatSession = createOrFetchSession(request.conversationId(), user);
 
+        var conversationId = chatSession.getConversation().getId();
+        var processId = chatSession.getProcessId();
+
+        logger.info("Created or loaded a session for conversation ID: {} and process ID: {}", conversationId,
+                processId);
+
         return new InitSessionResponse(chatSession.getConversation().getId(), chatSession.getProcessId());
+    }
+
+    @GetMapping(value = "/stream/{processId}")
+    public SseEmitter streamMessages(@PathVariable(name = "processId") String processId) {
+        logger.info("Starting message streaming for process ID: {}", processId);
+
+        var emitter = new SseEmitter(Long.MAX_VALUE);
+
+        processEmitters.computeIfAbsent(processId, id -> new CopyOnWriteArrayList<>())
+                .add(emitter);
+
+        emitter.onCompletion(() -> processEmitters.get(processId).remove(emitter));
+        emitter.onError(throwable -> processEmitters.get(processId).remove(emitter));
+        emitter.onTimeout(() -> processEmitters.get(processId).remove(emitter));
+
+        // TODO check if processId and conversationId match
+        // TODO fetch user object
+        User user = new SimpleUser("jettro", "jettro", "jettro", "jettro" + "@example" +
+                ".org");
+
+        var outputChannel = createOrFetchSession(processId, user).getOutputChannel();
+        if (outputChannel instanceof ControllerOutputChannel controllerOutputChannel) {
+            controllerOutputChannel.setEmitter(emitter);
+        } else {
+            throw new IllegalStateException("Output channel is not a ControllerOutputChannel");
+        }
+
+        return emitter;
     }
 
     @PostMapping(value = "/message", consumes = "application/json")
@@ -49,22 +89,14 @@ public class ChatController {
 
         // Load the ChatSession using the conversationId or create a new one
         ChatSession chatSession = chatbot.findSession(conversationId);
-        if (chatSession == null) { throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);}
-
-        // TODO Remove this in the end
-        // Get hold of the output channel
-        OutputChannel storedOutputChannel = chatSession.getOutputChannel();
-        if (!(storedOutputChannel instanceof ControllerOutputChannel outputChannel)) {
-            throw new IllegalStateException("Output channel is not a ControllerOutputChannel");
+        if (chatSession == null) {
+            throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);
         }
 
         // Call the agent with the user message
         chatSession.onUserMessage(new UserMessage(request.message()));
 
-        // Wait for the agent's response and return it
-        var assistantResponse = outputChannel.waitForResponse(30, TimeUnit.SECONDS);
-
-        return new Response(assistantResponse, chatSession.getProcessId());
+        return new Response("You should receive a response soon", chatSession.getProcessId());
     }
 
     @NotNull

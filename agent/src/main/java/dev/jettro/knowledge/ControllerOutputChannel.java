@@ -4,49 +4,53 @@ import com.embabel.agent.api.channel.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.io.IOException;
 
 public class ControllerOutputChannel implements OutputChannel {
     private static final Logger logger = LoggerFactory.getLogger(ControllerOutputChannel.class);
 
-    private CompletableFuture<String> futureResponse = new CompletableFuture<>();
+    private SseEmitter emitter;
+
+    public void setEmitter(SseEmitter emitter) {
+        logger.info("Setting emitter: {}", emitter);
+
+        this.emitter = emitter;
+
+        SseEmitter.SseEventBuilder builder = SseEmitter.event();
+        var sseEvent = builder
+                .id("unknown")
+                .name("Connected")
+                .data("{\"message\": \"Connected\"}")
+                .build();
+
+        try {
+            emitter.send(sseEvent);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public void send(@NotNull OutputChannelEvent event) {
-        switch (event) {
-            case MessageOutputChannelEvent messageOutputChannelEvent -> {
-                String content = messageOutputChannelEvent.getMessage().getContent();
-                logger.info("Response MessageOutputChannelEvent: {}", content);
-                futureResponse.complete(content);
-            }
-            case ContentOutputChannelEvent contentOutputChannelEvent ->
-                    logger.info("Response ContentOutputChannelEvent: {}", contentOutputChannelEvent.getContent());
-            case ProgressOutputChannelEvent progressOutputChannelEvent ->
-                    logger.info("Response ProgressOutputChannelEvent: {}", progressOutputChannelEvent.getMessage());
-            case LoggingOutputChannelEvent loggingOutputChannelEvent ->
-                    logger.info("Response LoggingOutputChannelEvent: {}", loggingOutputChannelEvent.getMessage());
-            default -> logger.info("Response UnknownOutputChannelEvent: {}", event.getClass().getSimpleName());
+
+        if (emitter == null) {
+            logger.warn("No emitter set, dropping event: {}", event);
+            return;
         }
 
-    }
+        SseEmitter.SseEventBuilder builder = SseEmitter.event();
+        var sseEvent = builder
+                .id(event.getProcessId())
+                .name(event.getClass().getSimpleName())
+                .data(event)
+                .build();
 
-    public String waitForResponse(int timeout, TimeUnit timeUnit) {
         try {
-            logger.info("Waiting for chatbot response...");
-            String result = futureResponse.get(timeout, timeUnit);
-            // Reset for the next message if the session is reused
-            futureResponse = new CompletableFuture<>();
-            logger.info("Chatbot response received: {}", result.substring(0, Math.min(result.length(), 50)));
-            return result;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            logger.error("Error waiting for chatbot response", e);
-            // Reset on error so a stuck future doesn't block future attempts
-            futureResponse = new CompletableFuture<>();
-            return "Error: " + e.getMessage();
+            emitter.send(sseEvent);
+        } catch (IOException e) {
+            logger.error("Error sending event to client", e);
         }
     }
 }
