@@ -6,35 +6,41 @@ import {
   Spacer, 
   Text,
   HStack,
-  NativeSelect
+  Button
 } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import logo from '../assets/logo-jettrodev.png';
-import { fetchUsers } from '../api';
-import type { User } from '../api';
+import { logout as apiLogout } from '../api';
 import { ColorModeButton } from './ui/color-mode';
+import { useAuth } from '../context/AuthContext';
+import { FiLogOut } from 'react-icons/fi';
+import { toaster } from './ui/toaster';
 
-interface NavbarProps {
-  onUserSelect: (userId: string) => void;
-}
+export function Navbar() {
+  const { username, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-export function Navbar({ onUserSelect }: NavbarProps) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-
-  useEffect(() => {
-    fetchUsers().then(data => {
-      setUsers(data);
-    }).catch(err => {
-      console.error('Failed to fetch users', err);
-    });
-  }, []);
-
-  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const userId = e.target.value;
-    setSelectedUserId(userId);
-    if (userId) {
-      onUserSelect(userId);
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await apiLogout();
+      logout();
+      toaster.create({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out',
+        type: 'success',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still logout locally even if backend call fails
+      logout();
+      toaster.create({
+        title: 'Logged Out',
+        description: 'Logged out locally',
+        type: 'info',
+      });
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -57,40 +63,22 @@ export function Navbar({ onUserSelect }: NavbarProps) {
         </Heading>
         <Spacer />
         <Flex align="center" gap={4}>
-          <HStack gap={2}>
-            <Text fontSize="sm" fontWeight="medium">User:</Text>
-            <NativeSelect.Root size="sm" minW="200px">
-              <NativeSelect.Field 
-                value={selectedUserId} 
-                onChange={handleUserChange}
-                bg="white"
-                color="#1a202c"
-                borderColor="gray.300"
-                _dark={{ 
-                  bg: 'gray.700',
-                  color: 'gray.100',
-                  borderColor: 'gray.600'
-                }}
-                css={{
-                  '& option': {
-                    backgroundColor: 'white',
-                    color: '#1a202c',
-                  },
-                }}
-              >
-                <option value="" disabled>
-                  Select a user...
-                </option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.displayName}
-                  </option>
-                ))}
-              </NativeSelect.Field>
-              <NativeSelect.Indicator />
-            </NativeSelect.Root>
+          <HStack gap={3}>
+            <Text fontSize="sm" fontWeight="medium" color="gray.600" _dark={{ color: 'gray.400' }}>
+              Welcome, {username}
+            </Text>
+            <Button
+              size="sm"
+              colorPalette="red"
+              variant="outline"
+              onClick={handleLogout}
+              loading={isLoggingOut}
+            >
+              <FiLogOut />
+              Logout
+            </Button>
+            <ColorModeButton />
           </HStack>
-          <ColorModeButton />
         </Flex>
       </Flex>
     </Box>

@@ -13,6 +13,7 @@ import dev.jettro.knowledge.model.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -35,12 +36,10 @@ public class ChatController {
     }
 
     @PostMapping(value = "/init", consumes = "application/json")
-    public InitSessionResponse initialiseSession(@RequestBody InitSessionRequest request) {
+    public InitSessionResponse initialiseSession(@RequestBody InitSessionRequest request, Authentication authentication) {
         logger.info("Received request to initialise session for user: {}", request.userId());
 
-        // TODO fetch user object
-        User user = new SimpleUser(request.userId(), request.userId(), request.userId(), request.userId() + "@example" +
-                ".org");
+        User user = getUser(authentication);
 
         ChatSession chatSession = createOrFetchSession(request.conversationId(), user);
 
@@ -54,7 +53,7 @@ public class ChatController {
     }
 
     @GetMapping(value = "/stream/{processId}")
-    public SseEmitter streamMessages(@PathVariable(name = "processId") String processId) {
+    public SseEmitter streamMessages(@PathVariable(name = "processId") String processId, Authentication authentication) {
         logger.info("Starting message streaming for process ID: {}", processId);
 
         var emitter = new SseEmitter(Long.MAX_VALUE);
@@ -66,10 +65,7 @@ public class ChatController {
         emitter.onError(throwable -> processEmitters.get(processId).remove(emitter));
         emitter.onTimeout(() -> processEmitters.get(processId).remove(emitter));
 
-        // TODO check if processId and conversationId match
-        // TODO fetch user object
-        User user = new SimpleUser("jettro", "jettro", "jettro", "jettro" + "@example" +
-                ".org");
+        User user = getUser(authentication);
 
         var outputChannel = createOrFetchSession(processId, user).getOutputChannel();
         if (outputChannel instanceof ControllerOutputChannel controllerOutputChannel) {
@@ -115,12 +111,13 @@ public class ChatController {
             if (chatSession == null) {
                 throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);
             }
-            // Only required as we change the user within a session, which is not common.
-            if (chatSession.getUser() != null && !chatSession.getUser().getId().equals(user.getId())) {
-                chatSession = chatbot.createSession(user, new ControllerOutputChannel(), null);
-            }
         }
         return chatSession;
+    }
+
+    private User getUser(Authentication authentication) {
+        return new SimpleUser(authentication.getName(), authentication.getName(), authentication.getName(), authentication.getName() + "@example" +
+                ".org");
     }
 
 }

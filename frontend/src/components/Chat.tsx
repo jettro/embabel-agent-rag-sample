@@ -14,13 +14,14 @@ import { sendChatMessage, initializeSession } from '../api';
 import { ChatMessage } from './ChatMessage';
 import { FiArrowUp } from 'react-icons/fi';
 import { useChatSSE } from '../hooks/useChatSSE';
+import { useAuth } from '../context/AuthContext';
 
 interface ChatProps {
-  selectedUserId?: string;
   onProcessIdChange?: (processId: string | null) => void;
 }
 
-export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
+export function Chat({ onProcessIdChange }: ChatProps) {
+  const { username } = useAuth();
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,12 +39,12 @@ export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize session when user is selected
+  // Initialize session when component mounts
   useEffect(() => {
-    if (selectedUserId) {
-      handleInitializeSession(selectedUserId);
+    if (username) {
+      handleInitializeSession(username);
     }
-  }, [selectedUserId]);
+  }, [username]);
 
   // Set up SSE message handler
   useEffect(() => {
@@ -121,7 +122,7 @@ export function Chat({ selectedUserId, onProcessIdChange }: ChatProps) {
           <Center h="full">
             <VStack gap={4}>
               <Text fontSize="lg" color="gray.400">
-                {isInitializing ? 'Initializing session...' : 'Please select a user from the dropdown above'}
+                {isInitializing ? 'Initializing session...' : 'Initializing your chat session...'}
               </Text>
               {isInitializing && <Spinner size="lg" colorPalette="blue" />}
             </VStack>

@@ -24,12 +24,27 @@ export interface ChatResponse {
   procesId: string;
 }
 
+// Helper to get auth headers
+let authCredentials: string | null = null;
+
+export function setAuthCredentials(credentials: string | null) {
+  authCredentials = credentials;
+}
+
+function getAuthHeaders(): HeadersInit {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (authCredentials) {
+    headers['Authorization'] = `Basic ${authCredentials}`;
+  }
+  return headers;
+}
+
 export async function initializeSession(userId: string, conversationId?: string): Promise<InitSessionResponse> {
   const response = await fetch('/chat/init', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ userId, conversationId }),
   });
 
@@ -43,9 +58,7 @@ export async function initializeSession(userId: string, conversationId?: string)
 export async function sendChatMessage(message: string, conversationId: string): Promise<ChatResponse> {
   const response = await fetch('/chat/message', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ message, conversationId }),
   });
 
@@ -59,6 +72,7 @@ export async function sendChatMessage(message: string, conversationId: string): 
 export async function reindexData(): Promise<string> {
   const response = await fetch('/ingest', {
     method: 'POST',
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -68,19 +82,12 @@ export async function reindexData(): Promise<string> {
   return await response.text();
 }
 
-export interface User {
-  id: string;
-  displayName: string;
-  username: string;
-  email: string;
-}
-
-export async function fetchUsers(): Promise<User[]> {
-  const response = await fetch('/users', {
-    method: 'GET',
+export async function logout(): Promise<void> {
+  const response = await fetch('/logout', {
+    method: 'POST',
+    headers: getAuthHeaders(),
   });
   if (!response.ok) {
-    throw new Error(`Failed to fetch users: ${response.statusText}`);
+    throw new Error(`Failed to logout: ${response.statusText}`);
   }
-  return await response.json();
 }
