@@ -13,10 +13,17 @@ import logo from '../assets/logo-jettrodev.png';
 import { logout as apiLogout } from '../api';
 import { ColorModeButton } from './ui/color-mode';
 import { useAuth } from '../context/AuthContext';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiMessageSquare, FiSettings } from 'react-icons/fi';
 import { toaster } from './ui/toaster';
 
-export function Navbar() {
+type Screen = 'chat' | 'admin';
+
+interface NavbarProps {
+  currentScreen: Screen;
+  onScreenChange: (screen: Screen) => void;
+}
+
+export function Navbar({ currentScreen, onScreenChange }: NavbarProps) {
   const { username, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -61,6 +68,29 @@ export function Navbar() {
         <Heading size="md">
           Knowledge Agent
         </Heading>
+        
+        {/* Navigation Menu */}
+        <HStack gap={2} ml={8}>
+          <Button
+            size="sm"
+            variant={currentScreen === 'chat' ? 'solid' : 'ghost'}
+            colorPalette={currentScreen === 'chat' ? 'blue' : 'gray'}
+            onClick={() => onScreenChange('chat')}
+          >
+            <FiMessageSquare />
+            Chat
+          </Button>
+          <Button
+            size="sm"
+            variant={currentScreen === 'admin' ? 'solid' : 'ghost'}
+            colorPalette={currentScreen === 'admin' ? 'blue' : 'gray'}
+            onClick={() => onScreenChange('admin')}
+          >
+            <FiSettings />
+            Admin
+          </Button>
+        </HStack>
+        
         <Spacer />
         <Flex align="center" gap={4}>
           <HStack gap={3}>

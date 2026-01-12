@@ -2,26 +2,10 @@ import {
   Box,
   VStack,
   Heading,
-  Button,
+  Text,
 } from '@chakra-ui/react';
-import { useState } from 'react';
-import { reindexData } from '../api';
 
 export function Sidebar() {
-  const [isReindexing, setIsReindexing] = useState(false);
-
-  const handleReindex = async () => {
-    setIsReindexing(true);
-    try {
-      const result = await reindexData();
-      alert(`Reindex Complete: ${result}`);
-    } catch (error) {
-      alert(`Reindex Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsReindexing(false);
-    }
-  };
-
   return (
     <Box
       w="280px"
@@ -34,17 +18,11 @@ export function Sidebar() {
       <VStack gap={6} align="stretch">
         <VStack gap={3} align="stretch">
           <Heading size="sm">
-            Actions
+            Chat History
           </Heading>
-          <Button
-            colorPalette="blue"
-            size="md"
-            onClick={handleReindex}
-            loading={isReindexing}
-            loadingText="Reindexing..."
-          >
-            Reindex Data
-          </Button>
+          <Text fontSize="sm" color="gray.500" fontStyle="italic">
+            Conversation history coming soon...
+          </Text>
         </VStack>
       </VStack>
     </Box>
