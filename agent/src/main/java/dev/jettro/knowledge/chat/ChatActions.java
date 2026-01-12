@@ -10,7 +10,7 @@ import com.embabel.chat.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static dev.jettro.knowledge.model.Roles.CHEAPEST;
+import static dev.jettro.knowledge.chat.model.Roles.CHEAPEST;
 
 @EmbabelComponent
 public class ChatActions {

@@ -1,4 +1,4 @@
-package dev.jettro.knowledge.model;
+package dev.jettro.knowledge.chat.model;
 
 public record Response(String answer, String procesId) {
 }

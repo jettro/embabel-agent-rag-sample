@@ -1,4 +1,4 @@
-package dev.jettro.knowledge.model;
+package dev.jettro.knowledge.chat.model;
 
 public record Request(String message, String conversationId) {
 }
