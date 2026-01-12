@@ -10,7 +10,6 @@ export interface InitSessionRequest {
 
 export interface InitSessionResponse {
   conversationId: string;
-  processId: string;
 }
 
 export interface ChatRequest {
@@ -20,7 +19,7 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   answer: string;
-  procesId: string;
+  conversationId: string;
 }
 
 // Helper to get auth headers

@@ -48,7 +48,7 @@ public class ChatController {
         logger.info("Created or loaded a session for conversation ID: {} and process ID: {}", conversationId,
                 processId);
 
-        return new InitSessionResponse(chatSession.getConversation().getId(), chatSession.getProcessId());
+        return new InitSessionResponse(chatSession.getConversation().getId());
     }
 
     @GetMapping(value = "/stream/{processId}")

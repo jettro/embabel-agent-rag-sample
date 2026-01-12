@@ -11,7 +11,7 @@ import { useAuth } from './context/AuthContext';
 type Screen = 'chat' | 'admin';
 
 function App() {
-  const [processId, setProcessId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentScreen, setCurrentScreen] = useState<Screen>('chat');
   const { isAuthenticated } = useAuth();
 
@@ -25,8 +25,8 @@ function App() {
       {currentScreen === 'chat' ? (
         <HStack gap={0} flex={1} align="stretch" overflow="hidden">
           <Sidebar />
-          <Chat onProcessIdChange={setProcessId} />
-          <EventStream processId={processId} />
+          <Chat onConversationIdChange={setConversationId} />
+          <EventStream conversationId={conversationId} />
         </HStack>
       ) : (
         <AdminScreen />

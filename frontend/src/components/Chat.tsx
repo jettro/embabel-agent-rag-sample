@@ -17,19 +17,18 @@ import { useChatSSE } from '../hooks/useChatSSE';
 import { useAuth } from '../context/AuthContext';
 
 interface ChatProps {
-  onProcessIdChange?: (processId: string | null) => void;
+  onConversationIdChange?: (conversationId: string | null) => void;
 }
 
-export function Chat({ onProcessIdChange }: ChatProps) {
+export function Chat({ onConversationIdChange }: ChatProps) {
   const { username } = useAuth();
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [processId, setProcessId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isConnected, error: sseError, onMessage } = useChatSSE(processId);
+  const { isConnected, error: sseError, onMessage } = useChatSSE(conversationId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,10 +64,8 @@ export function Chat({ onProcessIdChange }: ChatProps) {
       const response = await initializeSession();
       console.log('Session initialized:', response);
       console.log('ConversationId:', response.conversationId);
-      console.log('ProcessId:', response.processId);
       setConversationId(response.conversationId);
-      setProcessId(response.processId);
-      onProcessIdChange?.(response.processId);
+      onConversationIdChange?.(response.conversationId);
       setMessages([]);
     } catch (error) {
       alert(`Error initializing session: ${error instanceof Error ? error.message : 'Failed to initialize'}`);
@@ -154,7 +151,7 @@ export function Chat({ onProcessIdChange }: ChatProps) {
           <VStack gap={0} align="stretch">
             <HStack justify="flex-start" mb={4} pb={2} borderBottomWidth="1px">
               <Text fontSize="xs" color="gray.500">
-                Session: {conversationId.substring(0, 8)}... | Process: {processId?.substring(0, 8) || 'N/A'}...
+                Session: {conversationId.substring(0, 8)}...
               </Text>
             </HStack>
             {messages.map((message, index) => (

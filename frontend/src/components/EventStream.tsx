@@ -10,18 +10,18 @@ import { useSSE } from '../hooks/useSSE';
 import { useEffect, useRef } from 'react';
 
 interface EventStreamProps {
-  processId: string | null;
+  conversationId: string | null;
 }
 
-export function EventStream({ processId }: EventStreamProps) {
-  const { events, isConnected, error } = useSSE(processId);
+export function EventStream({ conversationId }: EventStreamProps) {
+  const { events, isConnected, error } = useSSE(conversationId);
   const eventsEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [events]);
 
-  if (!processId) {
+  if (!conversationId) {
     return null;
   }
 
@@ -43,7 +43,7 @@ export function EventStream({ processId }: EventStreamProps) {
           </Badge>
         </HStack>
         <Text fontSize="xs" color="gray.500">
-          Process: {processId.substring(0, 8)}...
+          Conversation: {conversationId.substring(0, 8)}...
         </Text>
       </Box>
 

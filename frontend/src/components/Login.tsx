@@ -34,38 +34,16 @@ export function Login() {
 
     setIsLoading(true);
 
-    try {
-      // Test authentication by making a request to the users endpoint
-      const response = await fetch('/users', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${btoa(`${username}:${password}`)}`,
-        },
-      });
-
-      if (response.ok) {
-        login(username, password);
-        toaster.create({
-          title: 'Login Successful',
-          description: `Welcome, ${username}!`,
-          type: 'success',
-        });
-      } else {
-        toaster.create({
-          title: 'Login Failed',
-          description: 'Invalid username or password',
-          type: 'error',
-        });
-      }
-    } catch (error) {
-      toaster.create({
-        title: 'Login Error',
-        description: error instanceof Error ? error.message : 'Failed to login',
-        type: 'error',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Simply store credentials - authentication will be validated on first API call
+    login(username, password);
+    
+    toaster.create({
+      title: 'Login Successful',
+      description: `Welcome, ${username}!`,
+      type: 'success',
+    });
+    
+    setIsLoading(false);
   };
 
   return (

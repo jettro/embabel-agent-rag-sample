@@ -1,21 +1,21 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import type { MessageOutputChannelEvent } from '../types/chatEvents';
 
-export function useChatSSE(processId: string | null) {
+export function useChatSSE(conversationId: string | null) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const onMessageCallbackRef = useRef<((content: string) => void) | null>(null);
 
   useEffect(() => {
-    if (!processId) {
+    if (!conversationId) {
       setIsConnected(false);
       setError(null);
       return;
     }
 
-    console.log('Connecting to chat SSE stream for process:', processId);
-    const eventSource = new EventSource(`/chat/stream/${processId}`);
+    console.log('Connecting to chat SSE stream for conversation:', conversationId);
+    const eventSource = new EventSource(`/chat/stream/${conversationId}`);
     eventSourceRef.current = eventSource;
     console.log('EventSource created, readyState:', eventSource.readyState);
 
@@ -87,7 +87,7 @@ export function useChatSSE(processId: string | null) {
       eventSourceRef.current = null;
       setIsConnected(false);
     };
-  }, [processId]);
+  }, [conversationId]);
 
   const onMessage = useCallback((callback: (content: string) => void) => {
     onMessageCallbackRef.current = callback;
