@@ -96,18 +96,18 @@ public class ChatController {
     }
 
     @NotNull
-    private ChatSession createOrFetchSession(Object conversationId, User user) {
+    private ChatSession createOrFetchSession(String conversationId, User user) {
         if (user == null) {
             user = new SimpleUser("default", "Default User", "default", "default@example.org");
         }
 
         ChatSession chatSession;
-        if (conversationId == null || conversationId.equals("")) {
+        if (conversationId == null || conversationId.isEmpty()) {
             logger.info("Creating new conversation for user: {}", user.getDisplayName());
             chatSession = chatbot.createSession(user, new ControllerOutputChannel(), null);
         } else {
             logger.info("Fetching conversation for ID: {} for user: {}", conversationId, user.getDisplayName());
-            chatSession = chatbot.findSession((String) conversationId);
+            chatSession = chatbot.findSession(conversationId);
             if (chatSession == null) {
                 throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);
             }
