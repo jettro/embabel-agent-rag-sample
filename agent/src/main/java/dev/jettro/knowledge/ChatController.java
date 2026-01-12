@@ -1,6 +1,5 @@
 package dev.jettro.knowledge;
 
-import com.embabel.agent.api.channel.*;
 import com.embabel.agent.api.identity.SimpleUser;
 import com.embabel.agent.api.identity.User;
 import com.embabel.chat.ChatSession;
@@ -68,10 +67,10 @@ public class ChatController {
         User user = getUser(authentication);
 
         var outputChannel = createOrFetchSession(processId, user).getOutputChannel();
-        if (outputChannel instanceof ControllerOutputChannel controllerOutputChannel) {
-            controllerOutputChannel.setEmitter(emitter);
+        if (outputChannel instanceof SseEmitterOutputChannel sseEmitterOutputChannel) {
+            sseEmitterOutputChannel.setEmitter(emitter, processId);
         } else {
-            throw new IllegalStateException("Output channel is not a ControllerOutputChannel");
+            throw new IllegalStateException("Output channel is not a SseEmitterOutputChannel");
         }
 
         return emitter;
@@ -104,7 +103,7 @@ public class ChatController {
         ChatSession chatSession;
         if (conversationId == null || conversationId.isEmpty()) {
             logger.info("Creating new conversation for user: {}", user.getDisplayName());
-            chatSession = chatbot.createSession(user, new ControllerOutputChannel(), null);
+            chatSession = chatbot.createSession(user, new SseEmitterOutputChannel(), null);
         } else {
             logger.info("Fetching conversation for ID: {} for user: {}", conversationId, user.getDisplayName());
             chatSession = chatbot.findSession(conversationId);
