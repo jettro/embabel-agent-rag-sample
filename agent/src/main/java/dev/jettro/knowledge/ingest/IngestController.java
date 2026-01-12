@@ -1,4 +1,4 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.ingest;
 
 import com.embabel.agent.rag.ingestion.NeverRefreshExistingDocumentContentPolicy;
 import com.embabel.agent.rag.ingestion.TikaHierarchicalContentReader;

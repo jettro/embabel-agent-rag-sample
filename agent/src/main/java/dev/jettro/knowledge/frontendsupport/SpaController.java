@@ -1,4 +1,4 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.frontendsupport;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

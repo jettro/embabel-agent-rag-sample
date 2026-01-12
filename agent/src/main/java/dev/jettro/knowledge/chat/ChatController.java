@@ -1,4 +1,4 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.chat;
 
 import com.embabel.agent.api.identity.SimpleUser;
 import com.embabel.agent.api.identity.User;
@@ -36,9 +36,9 @@ public class ChatController {
 
     @PostMapping(value = "/init", consumes = "application/json")
     public InitSessionResponse initialiseSession(@RequestBody InitSessionRequest request, Authentication authentication) {
-        logger.info("Received request to initialise session for user: {}", request.userId());
 
         User user = getUser(authentication);
+        logger.info("Received request to initialise session for user: {}", user.getId());
 
         ChatSession chatSession = createOrFetchSession(request.conversationId(), user);
 

@@ -5,7 +5,6 @@ export interface ChatMessage {
 }
 
 export interface InitSessionRequest {
-  userId: string;
   conversationId?: string;
 }
 
@@ -41,11 +40,11 @@ function getAuthHeaders(): HeadersInit {
   return headers;
 }
 
-export async function initializeSession(userId: string, conversationId?: string): Promise<InitSessionResponse> {
+export async function initializeSession(conversationId?: string): Promise<InitSessionResponse> {
   const response = await fetch('/chat/init', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ userId, conversationId }),
+    body: JSON.stringify({ conversationId }),
   });
 
   if (!response.ok) {

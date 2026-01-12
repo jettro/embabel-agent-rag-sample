@@ -1,4 +1,4 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.chat;
 
 import com.embabel.agent.api.channel.*;
 import org.jetbrains.annotations.NotNull;

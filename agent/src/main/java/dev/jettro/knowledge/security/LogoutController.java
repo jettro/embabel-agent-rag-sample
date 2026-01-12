@@ -1,4 +1,4 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

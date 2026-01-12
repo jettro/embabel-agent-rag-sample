@@ -42,7 +42,7 @@ export function Chat({ onProcessIdChange }: ChatProps) {
   // Initialize session when component mounts
   useEffect(() => {
     if (username) {
-      handleInitializeSession(username);
+      handleInitializeSession();
     }
   }, [username]);
 
@@ -59,12 +59,10 @@ export function Chat({ onProcessIdChange }: ChatProps) {
     });
   }, [onMessage]);
 
-  const handleInitializeSession = async (userId: string) => {
-    if (!userId.trim()) return;
-
+  const handleInitializeSession = async () => {
     setIsInitializing(true);
     try {
-      const response = await initializeSession(userId);
+      const response = await initializeSession();
       console.log('Session initialized:', response);
       console.log('ConversationId:', response.conversationId);
       console.log('ProcessId:', response.processId);

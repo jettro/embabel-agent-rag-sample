@@ -1,4 +1,4 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.chat;
 
 import com.embabel.agent.core.AgentPlatform;
 import com.embabel.agent.core.Verbosity;

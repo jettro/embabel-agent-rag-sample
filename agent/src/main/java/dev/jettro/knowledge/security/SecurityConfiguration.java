@@ -1,9 +1,10 @@
-package dev.jettro.knowledge;
+package dev.jettro.knowledge.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,6 +27,10 @@ public class SecurityConfiguration {
                         .anyRequest().authenticated()
                 )
                 .httpBasic(httpBasic -> {})
+                // Enable session creation for SSE (EventSource) support
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
                 .csrf(csrf -> csrf.disable()); // Disable CSRF for simplicity (consider enabling with proper token handling in production)
 
         return http.build();
