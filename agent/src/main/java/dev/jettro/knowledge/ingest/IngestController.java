@@ -1,7 +1,7 @@
 package dev.jettro.knowledge.ingest;
 
-import com.embabel.agent.rag.ingestion.NeverRefreshExistingDocumentContentPolicy;
 import com.embabel.agent.rag.ingestion.TikaHierarchicalContentReader;
+import com.embabel.agent.rag.ingestion.policy.NeverRefreshExistingDocumentContentPolicy;
 import com.embabel.agent.rag.lucene.LuceneSearchOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -3,6 +3,8 @@ package dev.jettro.knowledge.chat;
 import com.embabel.agent.core.AgentPlatform;
 import com.embabel.agent.core.Verbosity;
 import com.embabel.agent.rag.ingestion.ContentChunker;
+import com.embabel.agent.rag.ingestion.InMemoryContentChunker;
+import com.embabel.agent.rag.ingestion.transform.AddTitlesChunkTransformer;
 import com.embabel.agent.rag.lucene.LuceneSearchOperations;
 import com.embabel.chat.Chatbot;
 import com.embabel.chat.agent.AgentProcessChatbot;
@@ -23,11 +25,11 @@ public class ChatConfiguration {
 
     @Bean
     LuceneSearchOperations luceneSearchOperations(ModelProvider modelProvider) {
-        var embeddingService = modelProvider.getEmbeddingService(DefaultModelSelectionCriteria.INSTANCE);
         return LuceneSearchOperations
                 .withName("sources")
-                .withEmbeddingService(embeddingService)
-                .withChunkerConfig(new ContentChunker.DefaultConfig(800,100, false))
+                .withEmbeddingService(modelProvider.getEmbeddingService(DefaultModelSelectionCriteria.INSTANCE))
+                .withChunkerConfig(new ContentChunker.Config(800,100, 100))
+                .withChunkTransformer(AddTitlesChunkTransformer.INSTANCE)
                 .withIndexPath(Path.of("./.lucene-index"))
                 .buildAndLoadChunks();
     }
