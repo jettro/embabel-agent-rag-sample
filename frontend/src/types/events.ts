@@ -1,7 +1,7 @@
 export interface AgentProcessEvent {
   processId: string;
   timestamp: string;
-  eventType: string;
+  type: string;
   [key: string]: unknown;
 }
 
