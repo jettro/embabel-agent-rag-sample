@@ -9,6 +9,7 @@ import com.embabel.chat.Conversation;
 import com.embabel.chat.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static dev.jettro.knowledge.chat.model.Roles.CHEAPEST;
 
@@ -28,6 +29,7 @@ public class ChatActions {
 
     @Action(canRerun = true, trigger = UserMessage.class)
     public void respond(Conversation conversation, ActionContext context) {
+        String userName = SecurityContextHolder.getContext().getAuthentication().getName();
         var lastUserMessage = conversation.lastMessageIfBeFromUser();
 
         if (lastUserMessage != null) {
@@ -35,7 +37,7 @@ public class ChatActions {
             var assistantMessage = context.ai()
                     .withLlmByRole(CHEAPEST.name())
                     .withReferences(toolishRag)
-                    .withSystemPrompt("You are a helpful assistant. Answer questions concisely.")
+                    .withSystemPrompt("You are a helpful assistant. Answer questions concisely. Always address the current user by their name: " + userName + ".")
                     .respond(conversation.getMessages());
             context.sendMessage(conversation.addMessage(assistantMessage));
         } else {
