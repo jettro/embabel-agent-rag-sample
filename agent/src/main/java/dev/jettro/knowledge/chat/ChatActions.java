@@ -7,6 +7,8 @@ import com.embabel.agent.rag.service.SearchOperations;
 import com.embabel.agent.rag.tools.ToolishRag;
 import com.embabel.chat.Conversation;
 import com.embabel.chat.UserMessage;
+import dev.jettro.knowledge.security.CustomUserDetails;
+import dev.jettro.knowledge.security.KnowledgeUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,7 +31,10 @@ public class ChatActions {
 
     @Action(canRerun = true, trigger = UserMessage.class)
     public void respond(Conversation conversation, ActionContext context) {
-        String userName = SecurityContextHolder.getContext().getAuthentication().getName();
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var principal = (CustomUserDetails) auth.getPrincipal();
+        KnowledgeUser user = principal.getUser();
+
         var lastUserMessage = conversation.lastMessageIfBeFromUser();
 
         if (lastUserMessage != null) {
@@ -37,7 +42,7 @@ public class ChatActions {
             var assistantMessage = context.ai()
                     .withLlmByRole(CHEAPEST.name())
                     .withReferences(toolishRag)
-                    .withSystemPrompt("You are a helpful assistant. Answer questions concisely. Always address the current user by their name: " + userName + ".")
+                    .withSystemPrompt("You are a helpful assistant. Answer questions concisely. Always address the current user by their name: " + user.getDisplayName() + ".")
                     .respond(conversation.getMessages());
             context.sendMessage(conversation.addMessage(assistantMessage));
         } else {

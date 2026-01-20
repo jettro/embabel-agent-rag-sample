@@ -14,7 +14,6 @@ export interface InitSessionResponse {
 
 export interface ChatRequest {
   message: string;
-  conversationId: string;
 }
 
 export interface ChatResponse {
@@ -39,11 +38,10 @@ function getAuthHeaders(): HeadersInit {
   return headers;
 }
 
-export async function initializeSession(conversationId?: string): Promise<InitSessionResponse> {
+export async function initializeSession(): Promise<InitSessionResponse> {
   const response = await fetch('/chat/init', {
-    method: 'POST',
+    method: 'GET',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ conversationId }),
   });
 
   if (!response.ok) {
@@ -53,11 +51,11 @@ export async function initializeSession(conversationId?: string): Promise<InitSe
   return await response.json();
 }
 
-export async function sendChatMessage(message: string, conversationId: string): Promise<ChatResponse> {
+export async function sendChatMessage(message: string): Promise<ChatResponse> {
   const response = await fetch('/chat/message', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ message, conversationId }),
+    body: JSON.stringify({ message }),
   });
 
   if (!response.ok) {

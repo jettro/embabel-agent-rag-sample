@@ -1,18 +1,17 @@
 package dev.jettro.knowledge.chat;
 
-import com.embabel.agent.api.identity.SimpleUser;
-import com.embabel.agent.api.identity.User;
 import com.embabel.chat.ChatSession;
 import com.embabel.chat.Chatbot;
 import com.embabel.chat.UserMessage;
-import dev.jettro.knowledge.chat.model.InitSessionRequest;
 import dev.jettro.knowledge.chat.model.InitSessionResponse;
 import dev.jettro.knowledge.chat.model.Request;
 import dev.jettro.knowledge.chat.model.Response;
+import dev.jettro.knowledge.security.CustomUserDetails;
+import dev.jettro.knowledge.security.KnowledgeUser;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -34,13 +33,12 @@ public class ChatController {
         this.chatbot = chatbot;
     }
 
-    @PostMapping(value = "/init", consumes = "application/json")
-    public InitSessionResponse initialiseSession(@RequestBody InitSessionRequest request, Authentication authentication) {
-
-        User user = getUser(authentication);
+    @GetMapping(value = "/init", consumes = "application/json")
+    public InitSessionResponse initialiseSession(@AuthenticationPrincipal CustomUserDetails authentication) {
+        KnowledgeUser user = authentication.getUser();
         logger.info("Received request to initialise session for user: {}", user.getId());
 
-        ChatSession chatSession = createOrFetchSession(request.conversationId(), user);
+        ChatSession chatSession = createOrFetchSession(user);
 
         var conversationId = chatSession.getConversation().getId();
         var processId = chatSession.getProcessId();
@@ -51,8 +49,9 @@ public class ChatController {
         return new InitSessionResponse(chatSession.getConversation().getId());
     }
 
-    @GetMapping(value = "/stream/{processId}")
-    public SseEmitter streamMessages(@PathVariable(name = "processId") String processId, Authentication authentication) {
+    @GetMapping(value = "/stream")
+    public SseEmitter streamMessages(@AuthenticationPrincipal CustomUserDetails authentication) {
+        var processId = authentication.getUser().getProcessId();
         logger.info("Starting message streaming for process ID: {}", processId);
 
         var emitter = new SseEmitter(Long.MAX_VALUE);
@@ -64,9 +63,9 @@ public class ChatController {
         emitter.onError(throwable -> processEmitters.get(processId).remove(emitter));
         emitter.onTimeout(() -> processEmitters.get(processId).remove(emitter));
 
-        User user = getUser(authentication);
+        KnowledgeUser user = authentication.getUser();
 
-        var outputChannel = createOrFetchSession(processId, user).getOutputChannel();
+        var outputChannel = createOrFetchSession(user).getOutputChannel();
         if (outputChannel instanceof SseEmitterOutputChannel sseEmitterOutputChannel) {
             sseEmitterOutputChannel.setEmitter(emitter, processId);
         } else {
@@ -77,15 +76,18 @@ public class ChatController {
     }
 
     @PostMapping(value = "/message", consumes = "application/json")
-    public Response chat(@RequestBody Request request) {
+    public Response chat(@RequestBody Request request, @AuthenticationPrincipal CustomUserDetails authentication) {
         logger.info("Received message: {}", request.message());
 
-        var conversationId = request.conversationId();
+        var processId = authentication.getUser().getProcessId();
+        if (processId == null || processId.isEmpty()) {
+            throw new IllegalArgumentException("User is not authenticated or has no matching process ID");
+        }
 
         // Load the ChatSession using the conversationId or create a new one
-        ChatSession chatSession = chatbot.findSession(conversationId);
+        ChatSession chatSession = chatbot.findSession(processId);
         if (chatSession == null) {
-            throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);
+            throw new IllegalArgumentException("Conversation not found for ID: " + processId);
         }
 
         // Call the agent with the user message
@@ -95,28 +97,27 @@ public class ChatController {
     }
 
     @NotNull
-    private ChatSession createOrFetchSession(String conversationId, User user) {
+    private ChatSession createOrFetchSession(KnowledgeUser user) {
         if (user == null) {
-            user = new SimpleUser("default", "Default User", "default", "default@example.org");
+            throw new IllegalArgumentException("User cannot be null, it should be authenticated");
         }
 
+        var processId = user.getProcessId();
+
         ChatSession chatSession;
-        if (conversationId == null || conversationId.isEmpty()) {
+        if (processId == null || processId.isEmpty()) {
             logger.info("Creating new conversation for user: {}", user.getDisplayName());
             chatSession = chatbot.createSession(user, new SseEmitterOutputChannel(), null);
+            processId = chatSession.getProcessId();
+            user.setProcessId(processId);
         } else {
-            logger.info("Fetching conversation for ID: {} for user: {}", conversationId, user.getDisplayName());
-            chatSession = chatbot.findSession(conversationId);
+            logger.info("Fetching conversation for ID: {} for user: {}", processId, user.getDisplayName());
+            chatSession = chatbot.findSession(processId);
             if (chatSession == null) {
-                throw new IllegalArgumentException("Conversation not found for ID: " + conversationId);
+                throw new IllegalArgumentException("Process not found for ID: " + processId);
             }
         }
         return chatSession;
-    }
-
-    private User getUser(Authentication authentication) {
-        return new SimpleUser(authentication.getName(), authentication.getName(), authentication.getName(), authentication.getName() + "@example" +
-                ".org");
     }
 
 }

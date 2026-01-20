@@ -89,7 +89,7 @@ export function Chat({ onConversationIdChange }: ChatProps) {
 
     try {
       // Just send the message, response will come via SSE
-      await sendChatMessage(input, conversationId);
+      await sendChatMessage(input);
     } catch (error) {
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to send message'}`);
       setIsLoading(false);

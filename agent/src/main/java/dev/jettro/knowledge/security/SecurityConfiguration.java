@@ -16,6 +16,8 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
+import java.util.Map;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
@@ -62,38 +64,36 @@ public class SecurityConfiguration {
                         // Global authentication entry point to prevent popup
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
-                .csrf(csrf -> csrf.disable()); // Disable CSRF for simplicity (consider enabling with proper token handling in production)
+                .csrf(csrf -> csrf.disable()); // Disable CSRF for simplicity (consider enabling with proper token
+        // handling in production)
 
         return http.build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails jettro = User.builder()
-                .username("jettro")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
+        CustomUserDetails jettro = new CustomUserDetails(
+                new KnowledgeUser("jettro", "Jettro", "jettro"),
+                passwordEncoder().encode("password"));
 
-        UserDetails ian = User.builder()
-                .username("ian")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
+        CustomUserDetails ian = new CustomUserDetails(
+                new KnowledgeUser("ian", "Ian", "ian"),
+                passwordEncoder().encode("password"));
 
-        UserDetails roy = User.builder()
-                .username("roy")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
+        CustomUserDetails roy = new CustomUserDetails(
+                new KnowledgeUser("roy", "Roy", "roy"),
+                passwordEncoder().encode("password"));
 
-        UserDetails marijn = User.builder()
-                .username("marijn")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
+        CustomUserDetails marijn = new CustomUserDetails(
+                new KnowledgeUser("marijn", "Marijn", "marijn"),
+                passwordEncoder().encode("password"));
 
-        return new InMemoryUserDetailsManager(jettro, ian, roy, marijn);
+        return new CustomUserDetailsService(Map.of(
+                jettro.getUsername(), jettro,
+                ian.getUsername(), ian,
+                roy.getUsername(), roy,
+                marijn.getUsername(), marijn)
+        );
     }
 
     @Bean

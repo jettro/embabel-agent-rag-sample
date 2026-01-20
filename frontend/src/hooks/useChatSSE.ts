@@ -15,7 +15,7 @@ export function useChatSSE(conversationId: string | null) {
     }
 
     console.log('Connecting to chat SSE stream for conversation:', conversationId);
-    const eventSource = new EventSource(`/chat/stream/${conversationId}`);
+    const eventSource = new EventSource(`/chat/stream`);
     eventSourceRef.current = eventSource;
     console.log('EventSource created, readyState:', eventSource.readyState);
 
