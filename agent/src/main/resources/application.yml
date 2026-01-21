@@ -4,12 +4,19 @@ embabel:
     default-embedding-model: text-embedding-3-small
     llms:
       CHEAPEST: gpt-5-mini
-      standard: gpt-5-mini
-      best: gpt-5
+      STANDARD: gpt-5-mini
+      BEST: gpt-5
     embedding-services:
-      fast: text-embedding-3-small
-      accurate: text-embedding-3-large
+      FAST: text-embedding-3-small
+      ACCURATE: text-embedding-3-large
 
   agent:
     logging:
       personality: montypython
+
+dice:
+  security:
+    api-key:
+      enabled: true
+      keys:
+        - impromptu-admin

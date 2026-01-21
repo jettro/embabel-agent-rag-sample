@@ -11,6 +11,7 @@ import dev.jettro.knowledge.security.CustomUserDetails;
 import dev.jettro.knowledge.security.KnowledgeUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static dev.jettro.knowledge.chat.model.Roles.CHEAPEST;
@@ -21,7 +22,7 @@ public class ChatActions {
 
     private final ToolishRag toolishRag;
 
-    public ChatActions(SearchOperations searchOperations) {
+    public ChatActions(@Qualifier("luceneSearchOperations") SearchOperations searchOperations) {
         this.toolishRag = new ToolishRag(
                 "sources",
                 "sources for answering user questions",

@@ -46,6 +46,14 @@
             <version>${embabel-agent.version}</version>
         </dependency>
 
+        <!-- TODO Different than the impromptu sample-->
+        <dependency>
+            <groupId>com.embabel.dice</groupId>
+            <artifactId>dice</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+
+
         <!-- Exposing the chat agent as a REST endpoint -->
 
         <dependency>

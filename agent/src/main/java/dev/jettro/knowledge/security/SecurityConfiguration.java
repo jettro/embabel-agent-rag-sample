@@ -42,7 +42,8 @@ public class SecurityConfiguration {
                                 "/**/*.woff",
                                 "/**/*.woff2",
                                 "/**/*.ttf",
-                                "/**/*.eot"
+                                "/**/*.eot",
+                                "/api/v1/**"
                         ).permitAll()
                         // Secure all API endpoints
                         .anyRequest().authenticated()
