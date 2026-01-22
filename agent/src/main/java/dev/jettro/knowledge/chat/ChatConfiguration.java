@@ -16,6 +16,8 @@ import com.embabel.dice.common.SchemaAdherence;
 import com.embabel.dice.common.SchemaRegistry;
 import com.embabel.dice.common.resolver.InMemoryEntityResolver;
 import com.embabel.dice.common.support.InMemorySchemaRegistry;
+import com.embabel.dice.incremental.ChunkHistoryStore;
+import com.embabel.dice.incremental.InMemoryChunkHistoryStore;
 import com.embabel.dice.pipeline.PropositionPipeline;
 import com.embabel.dice.proposition.PropositionExtractor;
 import com.embabel.dice.proposition.PropositionRepository;
@@ -104,5 +106,10 @@ public class ChatConfiguration {
     @Bean
     EntityResolver entityResolver() {
         return new InMemoryEntityResolver();
+    }
+
+    @Bean
+    ChunkHistoryStore chunkHistoryStore() {
+        return new InMemoryChunkHistoryStore();
     }
 }

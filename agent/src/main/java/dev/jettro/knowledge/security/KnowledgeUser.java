@@ -1,10 +1,11 @@
 package dev.jettro.knowledge.security;
 
 import com.embabel.agent.api.identity.User;
+import com.embabel.agent.rag.model.NamedEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class KnowledgeUser implements User {
+public class KnowledgeUser implements User, NamedEntity {
 
     private final String id;
     private final String displayName;
@@ -47,7 +48,23 @@ public class KnowledgeUser implements User {
         return this.processId;
     }
 
+    @NotNull
+    public String getCurrentContext() {
+        return "%s_default_context".formatted(this.getId());
+    }
+
     public void setProcessId(String processId) {
         this.processId = processId;
+    }
+
+    // TODO check if this is correct in the example user
+    @Override
+    public @NotNull String getName() {
+        return this.getDisplayName();
+    }
+
+    @Override
+    public @NotNull String getDescription() {
+        return "Description for " + this.getName();
     }
 }
