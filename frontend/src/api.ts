@@ -122,3 +122,72 @@ export async function getPropositions(): Promise<Proposition[]> {
 
   return await response.json();
 }
+
+export async function getContextId(): Promise<string> {
+  const response = await fetch('/api/v1/propositions/contextId', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch context ID: ${response.statusText}`);
+  }
+
+  return await response.text();
+}
+
+export interface PropositionDto {
+  id: string;
+  contextId: string;
+  text: string;
+  mentions: Array<{
+    entityId: string;
+    role: string;
+    span?: { start: number; end: number };
+  }>;
+  confidence: number;
+  decay: number;
+  reasoning?: string;
+  grounding: string[];
+  created: string;
+  revised: string;
+  status: string;
+  level: number;
+  sourceIds: string[];
+}
+
+export interface EntitySummary {
+  created: number;
+  updated: number;
+  linked: number;
+}
+
+export interface RevisionSummary {
+  updated: number;
+  deprecated: number;
+}
+
+export interface ExtractResponse {
+  chunkId: string;
+  contextId: string;
+  propositions: PropositionDto[];
+  entities: EntitySummary;
+  revision?: RevisionSummary;
+}
+
+export async function extractPropositions(
+  contextId: string,
+  text: string
+): Promise<ExtractResponse> {
+  const response = await fetch(`/api/v1/contexts/${contextId}/extract`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ text }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to extract propositions: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
