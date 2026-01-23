@@ -1,6 +1,7 @@
 package dev.jettro.knowledge.chat;
 
 import com.embabel.agent.core.DataDictionary;
+import com.embabel.agent.rag.service.NamedEntityDataRepository;
 import com.embabel.chat.Message;
 import com.embabel.dice.common.EntityResolver;
 import com.embabel.dice.common.KnownEntity;
@@ -10,6 +11,8 @@ import com.embabel.dice.incremental.*;
 import com.embabel.dice.incremental.proposition.PropositionIncrementalAnalyzer;
 import com.embabel.dice.pipeline.ChunkPropositionResult;
 import com.embabel.dice.pipeline.PropositionPipeline;
+import com.embabel.dice.proposition.EntityMention;
+import com.embabel.dice.proposition.PropositionRepository;
 import com.embabel.dice.proposition.ReferencesEntities;
 import dev.jettro.knowledge.security.KnowledgeUser;
 import org.slf4j.Logger;
@@ -20,6 +23,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class ConversationPropositionExtraction {
@@ -29,13 +34,20 @@ public class ConversationPropositionExtraction {
     private final EntityResolver entityResolver;
     private final DataDictionary dataDictionary;
     private final ChunkHistoryStore chunkHistoryStore;
+    private final PropositionRepository propositionRepository;
+    private final NamedEntityDataRepository entityRepository;
 
     public ConversationPropositionExtraction(EntityResolver entityResolver,
                                              DataDictionary dataDictionary,
-                                             PropositionPipeline propositionPipeline, ChunkHistoryStore chunkHistoryStore) {
+                                             PropositionPipeline propositionPipeline,
+                                             ChunkHistoryStore chunkHistoryStore,
+                                             PropositionRepository propositionRepository,
+                                             NamedEntityDataRepository entityRepository) {
         this.entityResolver = entityResolver;
         this.dataDictionary = dataDictionary;
         this.chunkHistoryStore = chunkHistoryStore;
+        this.propositionRepository = propositionRepository;
+        this.entityRepository = entityRepository;
 
         var config = new WindowConfig();
 
@@ -99,6 +111,36 @@ public class ConversationPropositionExtraction {
                     .count();
 
             logger.info(result.infoString(true, 1));
+
+            // Storing
+
+            // Calculate actual counts based on what will be persisted
+            var propsToSave = result.propositionsToPersist();
+            var referencedEntityIds = propsToSave.stream()
+                    .flatMap(p -> p.getMentions().stream())
+                    .map(EntityMention::getResolvedId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            var newEntitiesToSave = result.newEntities().stream()
+                    .filter(e -> referencedEntityIds.contains(e.getId()))
+                    .count();
+
+            // Get revision stats for accurate logging
+            var stats = result.getPropositionExtractionStats();
+            var newProps = stats.getNewCount();
+            var updatedProps = stats.getMergedCount() + stats.getReinforcedCount();
+
+            result.persist(propositionRepository, entityRepository);
+            if (newProps > 0 || updatedProps > 0 || newEntitiesToSave > 0) {
+                logger.info("Persisted: {} new propositions, {} updated propositions, {} new entities",
+                        newProps,
+                        updatedProps,
+                        newEntitiesToSave
+                );
+            } else {
+                logger.info("No new data to persist (all propositions were duplicates)");
+            }
+
         } catch (Exception e) {
             logger.error("Error extracting propositions, don't break the chat loop", e);
         }

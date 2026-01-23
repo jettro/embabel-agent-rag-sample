@@ -13,10 +13,10 @@ import logo from '../assets/logo-jettrodev.png';
 import { logout as apiLogout } from '../api';
 import { ColorModeButton } from './ui/color-mode';
 import { useAuth } from '../context/AuthContext';
-import { FiLogOut, FiMessageSquare, FiSettings } from 'react-icons/fi';
+import { FiLogOut, FiMessageSquare, FiSettings, FiList } from 'react-icons/fi';
 import { toaster } from './ui/toaster';
 
-type Screen = 'chat' | 'admin';
+type Screen = 'chat' | 'admin' | 'propositions';
 
 interface NavbarProps {
   currentScreen: Screen;
@@ -79,6 +79,15 @@ export function Navbar({ currentScreen, onScreenChange }: NavbarProps) {
           >
             <FiMessageSquare />
             Chat
+          </Button>
+          <Button
+            size="sm"
+            variant={currentScreen === 'propositions' ? 'solid' : 'ghost'}
+            colorPalette={currentScreen === 'propositions' ? 'blue' : 'gray'}
+            onClick={() => onScreenChange('propositions')}
+          >
+            <FiList />
+            Propositions
           </Button>
           <Button
             size="sm"

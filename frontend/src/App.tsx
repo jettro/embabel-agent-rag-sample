@@ -5,10 +5,11 @@ import { Chat } from './components/Chat';
 import { Navbar } from './components/Navbar';
 import { EventStream } from './components/EventStream';
 import { AdminScreen } from './components/AdminScreen';
+import { PropositionsScreen } from './components/PropositionsScreen';
 import { Login } from './components/Login';
 import { useAuth } from './context/AuthContext';
 
-type Screen = 'chat' | 'admin';
+type Screen = 'chat' | 'admin' | 'propositions';
 
 function App() {
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -28,6 +29,8 @@ function App() {
           <Chat onConversationIdChange={setConversationId} />
           <EventStream conversationId={conversationId} />
         </HStack>
+      ) : currentScreen === 'propositions' ? (
+        <PropositionsScreen />
       ) : (
         <AdminScreen />
       )}

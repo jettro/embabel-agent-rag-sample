@@ -87,3 +87,38 @@ export async function logout(): Promise<void> {
     throw new Error(`Failed to logout: ${response.statusText}`);
   }
 }
+
+export interface Proposition {
+  id: string;
+  contextId: string;
+  text: string;
+  mentions: Array<{
+    entityId: string;
+    role: string;
+    span?: { start: number; end: number };
+  }>;
+  confidence: number;
+  decay: number;
+  reasoning?: string;
+  grounding: string[];
+  created: string;
+  revised: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'DEPRECATED';
+  level: number;
+  sourceIds: string[];
+  metadata: Record<string, any>;
+  uri?: string;
+}
+
+export async function getPropositions(): Promise<Proposition[]> {
+  const response = await fetch('/api/v1/propositions', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch propositions: ${response.statusText}`);
+  }
+
+  return await response.json();
+}

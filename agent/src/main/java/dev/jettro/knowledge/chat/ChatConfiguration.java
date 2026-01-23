@@ -8,6 +8,8 @@ import com.embabel.agent.rag.ingestion.ContentChunker;
 import com.embabel.agent.rag.ingestion.InMemoryContentChunker;
 import com.embabel.agent.rag.ingestion.transform.AddTitlesChunkTransformer;
 import com.embabel.agent.rag.lucene.LuceneSearchOperations;
+import com.embabel.agent.rag.service.NamedEntityDataRepository;
+import com.embabel.agent.rag.service.support.InMemoryNamedEntityDataRepository;
 import com.embabel.chat.Chatbot;
 import com.embabel.chat.agent.AgentProcessChatbot;
 import com.embabel.common.ai.model.*;
@@ -111,5 +113,13 @@ public class ChatConfiguration {
     @Bean
     ChunkHistoryStore chunkHistoryStore() {
         return new InMemoryChunkHistoryStore();
+    }
+
+    @Bean
+    NamedEntityDataRepository namedEntityDataRepository(DataDictionary dataDictionary, ModelProvider modelProvider) {
+        return new InMemoryNamedEntityDataRepository(
+                dataDictionary,
+                modelProvider.getEmbeddingService(ByRoleModelSelectionCriteria.Companion.byRole(FAST.name()))
+        );
     }
 }
