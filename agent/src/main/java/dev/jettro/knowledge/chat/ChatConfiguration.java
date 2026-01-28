@@ -21,6 +21,8 @@ import com.embabel.dice.common.support.InMemorySchemaRegistry;
 import com.embabel.dice.incremental.ChunkHistoryStore;
 import com.embabel.dice.incremental.InMemoryChunkHistoryStore;
 import com.embabel.dice.pipeline.PropositionPipeline;
+import com.embabel.dice.projection.memory.MemoryProjector;
+import com.embabel.dice.projection.memory.support.DefaultMemoryProjector;
 import com.embabel.dice.proposition.PropositionExtractor;
 import com.embabel.dice.proposition.PropositionRepository;
 import com.embabel.dice.proposition.extraction.LlmPropositionExtractor;
@@ -29,8 +31,14 @@ import com.embabel.dice.proposition.revision.PropositionReviser;
 import com.embabel.dice.proposition.store.InMemoryPropositionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
+import dev.jettro.knowledge.proposition.Product;
+import dev.jettro.knowledge.proposition.ProgrammingLanguage;
+import dev.jettro.knowledge.security.KnowledgeUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import java.nio.file.Path;
@@ -40,6 +48,8 @@ import static dev.jettro.knowledge.chat.model.Roles.STANDARD;
 
 @Configuration
 public class ChatConfiguration {
+    private static final Logger logger = LoggerFactory.getLogger(ChatConfiguration.class);
+
 
     @Bean
     Chatbot chatbot(AgentPlatform agentPlatform) {
@@ -70,8 +80,22 @@ public class ChatConfiguration {
     }
 
     @Bean
-    SchemaRegistry schemaRegistry(DataDictionary defaultSchema) {
-        return new InMemorySchemaRegistry(defaultSchema);
+    @Primary
+    DataDictionary blogDataDictionary() {
+        var schema = DataDictionary.fromClasses("blog",
+                Product.class,
+                ProgrammingLanguage.class,
+                KnowledgeUser.class
+        );
+        logger.info("Initialized data dictionary with classes: Product, ProgrammingLanguage");
+        return schema;
+    }
+
+    @Bean
+    SchemaRegistry schemaRegistry(DataDictionary blogDataDictionary) {
+        var registry = new InMemorySchemaRegistry(blogDataDictionary);
+        logger.info("Initialized schema registry with classes: Product, ProgrammingLanguage");
+        return registry;
     }
 
     @Bean
@@ -121,5 +145,10 @@ public class ChatConfiguration {
                 dataDictionary,
                 modelProvider.getEmbeddingService(ByRoleModelSelectionCriteria.Companion.byRole(FAST.name()))
         );
+    }
+
+    @Bean
+    MemoryProjector memoryProjector() {
+        return DefaultMemoryProjector.DEFAULT;
     }
 }

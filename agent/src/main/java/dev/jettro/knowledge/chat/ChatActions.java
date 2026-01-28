@@ -8,6 +8,9 @@ import com.embabel.agent.rag.service.SearchOperations;
 import com.embabel.agent.rag.tools.ToolishRag;
 import com.embabel.chat.Conversation;
 import com.embabel.chat.UserMessage;
+import com.embabel.dice.agent.Memory;
+import com.embabel.dice.projection.memory.MemoryProjector;
+import com.embabel.dice.proposition.PropositionRepository;
 import dev.jettro.knowledge.security.CustomUserDetails;
 import dev.jettro.knowledge.security.KnowledgeUser;
 import org.slf4j.Logger;
@@ -24,13 +27,20 @@ public class ChatActions {
 
     private final ToolishRag toolishRag;
     private final ApplicationEventPublisher eventPublisher;
+    private final PropositionRepository propositionRepository;
+    private final MemoryProjector memoryProjector;
 
-    public ChatActions(@Qualifier("luceneSearchOperations") SearchOperations searchOperations, ApplicationEventPublisher eventPublisher) {
+    public ChatActions(@Qualifier("luceneSearchOperations") SearchOperations searchOperations,
+                       ApplicationEventPublisher eventPublisher,
+                       PropositionRepository propositionRepository,
+                       MemoryProjector memoryProjector) {
         this.toolishRag = new ToolishRag(
                 "sources",
                 "sources for answering user questions",
                 searchOperations);
         this.eventPublisher = eventPublisher;
+        this.propositionRepository = propositionRepository;
+        this.memoryProjector = memoryProjector;
     }
 
     @Action
@@ -39,7 +49,7 @@ public class ChatActions {
         if (forUser instanceof KnowledgeUser iu) {
             return iu;
         } else {
-            logger.warn("bindUser: forUser is not an ImpromptuUser: {}", forUser);
+            logger.warn("bindUser: forUser is not an KnowledgeUser: {}", forUser);
             return null;
         }
     }
@@ -50,12 +60,17 @@ public class ChatActions {
         var lastUserMessage = conversation.lastMessageIfBeFromUser();
 
         if (lastUserMessage != null) {
+            var memory = Memory.forContext(user.getCurrentContext())
+                    .withRepository(propositionRepository)
+                    .withProjector(memoryProjector);
+
             logger.info("Received user message as last message: {}", lastUserMessage.getContent());
             var assistantMessage = context.ai()
                     .withLlmByRole(CHEAPEST.name())
-                    .withReferences(toolishRag)
+                    .withReferences(toolishRag, memory)
                     .withSystemPrompt("You are a helpful assistant. Answer questions concisely. Always address the current user by their name: " + user.getDisplayName() + ".")
                     .respond(conversation.getMessages());
+
             context.sendMessage(conversation.addMessage(assistantMessage));
 
             eventPublisher.publishEvent(new ConversationAnalysisRequestEvent(this, user, conversation));

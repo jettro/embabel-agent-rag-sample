@@ -1,8 +1,11 @@
 export type PropositionStatus = 'ACTIVE' | 'INACTIVE' | 'DEPRECATED';
 
 export interface EntityMention {
-  entityId: string;
+  name: string;
+  type: string;
+  resolvedId: string;
   role: string;
+  entityId?: string;
   span?: {
     start: number;
     end: number;

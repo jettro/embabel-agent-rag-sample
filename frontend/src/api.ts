@@ -93,7 +93,9 @@ export interface Proposition {
   contextId: string;
   text: string;
   mentions: Array<{
-    entityId: string;
+    name: string;
+    type: string;
+    resolvedId: string;
     role: string;
     span?: { start: number; end: number };
   }>;
@@ -110,8 +112,14 @@ export interface Proposition {
   uri?: string;
 }
 
-export async function getPropositions(): Promise<Proposition[]> {
-  const response = await fetch('/api/v1/propositions', {
+export interface MemoryResponse {
+  contextId: string;
+  count: number;
+  propositions: Proposition[];
+}
+
+export async function getPropositions(contextId: string): Promise<MemoryResponse> {
+  const response = await fetch(`/api/v1/contexts/${contextId}/memory`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });
@@ -141,7 +149,9 @@ export interface PropositionDto {
   contextId: string;
   text: string;
   mentions: Array<{
-    entityId: string;
+    name: string;
+    type: string;
+    resolvedId: string;
     role: string;
     span?: { start: number; end: number };
   }>;
@@ -152,19 +162,24 @@ export interface PropositionDto {
   created: string;
   revised: string;
   status: string;
-  level: number;
-  sourceIds: string[];
+  level?: number;
+  sourceIds?: string[];
+  metadata?: Record<string, any>;
+  uri?: string;
 }
 
 export interface EntitySummary {
-  created: number;
-  updated: number;
-  linked: number;
+  created: string[];
+  resolved: string[];
+  failed: string[];
 }
 
 export interface RevisionSummary {
-  updated: number;
-  deprecated: number;
+  created: number;
+  merged: number;
+  reinforced: number;
+  contradicted: number;
+  generalized: number;
 }
 
 export interface ExtractResponse {
@@ -187,6 +202,28 @@ export async function extractPropositions(
 
   if (!response.ok) {
     throw new Error(`Failed to extract propositions: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+export interface DeleteResponse {
+  id: string;
+  status: string;
+  previousStatus?: string;
+}
+
+export async function deleteProposition(
+  contextId: string,
+  propositionId: string
+): Promise<DeleteResponse> {
+  const response = await fetch(`/api/v1/contexts/${contextId}/memory/${propositionId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete proposition: ${response.statusText}`);
   }
 
   return await response.json();

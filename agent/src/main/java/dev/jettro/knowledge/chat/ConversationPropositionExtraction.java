@@ -33,7 +33,6 @@ public class ConversationPropositionExtraction {
     private final IncrementalAnalyzer<Message, ChunkPropositionResult> analyzer;
     private final EntityResolver entityResolver;
     private final DataDictionary dataDictionary;
-    private final ChunkHistoryStore chunkHistoryStore;
     private final PropositionRepository propositionRepository;
     private final NamedEntityDataRepository entityRepository;
 
@@ -45,7 +44,6 @@ public class ConversationPropositionExtraction {
                                              NamedEntityDataRepository entityRepository) {
         this.entityResolver = entityResolver;
         this.dataDictionary = dataDictionary;
-        this.chunkHistoryStore = chunkHistoryStore;
         this.propositionRepository = propositionRepository;
         this.entityRepository = entityRepository;
 
@@ -53,7 +51,7 @@ public class ConversationPropositionExtraction {
 
         this.analyzer = new PropositionIncrementalAnalyzer<>(
                 propositionPipeline,
-                this.chunkHistoryStore,
+                chunkHistoryStore,
                 MessageFormatter.INSTANCE,
                 config
         );
@@ -66,7 +64,11 @@ public class ConversationPropositionExtraction {
     @Async
     @EventListener
     public void onConversationExchange(ConversationAnalysisRequestEvent event) {
-        extractPropositions(event);
+        try {
+            extractPropositions(event);
+        } catch (Exception e) {
+            logger.error("Error extracting propositions, don't break the chat loop", e);
+        }
     }
 
     /**
@@ -77,72 +79,70 @@ public class ConversationPropositionExtraction {
         logger.info("Starting proposition extraction for conversation with {} messages",
                 event.conversation.getMessages().size());
 
-        try {
-            var messages = event.conversation.getMessages();
-            if (messages.size() < 2) {
-                logger.info("Not enough messages to extract propositions, need at least 2");
-                return;
-            }
+        var messages = event.conversation.getMessages();
+        if (messages.size() < 2) {
+            logger.info("Not enough messages to extract propositions, need at least 2");
+            return;
+        }
 
-            var context = SourceAnalysisContext
-                    .withContextId(event.user.getCurrentContext())
-                    .withEntityResolver(entityResolverForUser(event.user))
-                    .withSchema(dataDictionary) // TODO check Relations
-                    .withKnownEntities(KnownEntity.asCurrentUser(event.user))
-                    .withPromptVariables(Map.of(
-                            "user", event.user
-                    ));
+        var context = SourceAnalysisContext
+                .withContextId(event.user.getCurrentContext())
+                .withEntityResolver(entityResolverForUser(event.user))
+                .withSchema(dataDictionary) // TODO check Relations
+                .withKnownEntities(KnownEntity.asCurrentUser(event.user))
+                .withPromptVariables(Map.of(
+                        "user", event.user
+                ));
 
-            // Wrap conversation as incremental source and analyze
-            var source = new ConversationSource(event.conversation);
-            var result = analyzer.analyze(source, context);
+        // Wrap conversation as incremental source and analyze
+        var source = new ConversationSource(event.conversation);
+        var result = analyzer.analyze(source, context);
 
-            if (result == null) {
-                logger.info("Analysis skipped (not ready or already processed)");
-                return;
-            }
+        if (result == null) {
+            logger.info("Analysis skipped (not ready or already processed)");
+            return;
+        }
 
-            if (result.getPropositions().isEmpty()) {
-                logger.info("Analysis completed but no propositions extracted");
-                return;
-            }
-            var resolvedCount = result.getPropositions().stream()
-                    .filter(ReferencesEntities::isFullyResolved)
-                    .count();
+        if (result.getPropositions().isEmpty()) {
+            logger.info("Analysis completed but no propositions extracted");
+            return;
+        }
 
-            logger.info(result.infoString(true, 1));
+        result.persist(propositionRepository, entityRepository);
 
-            // Storing
+        if (logger.isInfoEnabled()) {
+            logPropositionAnalyzerResult(result);
+        }
 
-            // Calculate actual counts based on what will be persisted
-            var propsToSave = result.propositionsToPersist();
-            var referencedEntityIds = propsToSave.stream()
-                    .flatMap(p -> p.getMentions().stream())
-                    .map(EntityMention::getResolvedId)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-            var newEntitiesToSave = result.newEntities().stream()
-                    .filter(e -> referencedEntityIds.contains(e.getId()))
-                    .count();
+    }
 
-            // Get revision stats for accurate logging
-            var stats = result.getPropositionExtractionStats();
-            var newProps = stats.getNewCount();
-            var updatedProps = stats.getMergedCount() + stats.getReinforcedCount();
+    private void logPropositionAnalyzerResult(ChunkPropositionResult result) {
+        logger.info(result.infoString(true, 1));
 
-            result.persist(propositionRepository, entityRepository);
-            if (newProps > 0 || updatedProps > 0 || newEntitiesToSave > 0) {
-                logger.info("Persisted: {} new propositions, {} updated propositions, {} new entities",
-                        newProps,
-                        updatedProps,
-                        newEntitiesToSave
-                );
-            } else {
-                logger.info("No new data to persist (all propositions were duplicates)");
-            }
+        // Calculate actual counts based on what will be persisted
+        var propsToSave = result.propositionsToPersist();
+        var referencedEntityIds = propsToSave.stream()
+                .flatMap(p -> p.getMentions().stream())
+                .map(EntityMention::getResolvedId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        var newEntitiesToSave = result.newEntities().stream()
+                .filter(e -> referencedEntityIds.contains(e.getId()))
+                .count();
 
-        } catch (Exception e) {
-            logger.error("Error extracting propositions, don't break the chat loop", e);
+        // Get revision stats for accurate logging
+        var stats = result.getPropositionExtractionStats();
+        var newProps = stats.getNewCount();
+        var updatedProps = stats.getMergedCount() + stats.getReinforcedCount();
+
+        if (newProps > 0 || updatedProps > 0 || newEntitiesToSave > 0) {
+            logger.info("Persisted: {} new propositions, {} updated propositions, {} new entities",
+                    newProps,
+                    updatedProps,
+                    newEntitiesToSave
+            );
+        } else {
+            logger.info("No new data to persist (all propositions were duplicates)");
         }
     }
 

@@ -10,10 +10,6 @@ embabel:
       FAST: text-embedding-3-small
       ACCURATE: text-embedding-3-large
 
-  agent:
-    logging:
-      personality: montypython
-
 dice:
   security:
     api-key:

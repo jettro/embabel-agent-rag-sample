@@ -3,28 +3,35 @@ import {
   VStack,
   HStack,
   Text,
-  Badge,
   Spinner,
   Center,
+  IconButton,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import { getPropositions, type Proposition } from '../api';
+import { FiRefreshCw } from 'react-icons/fi';
+import { getPropositions, deleteProposition, type Proposition } from '../api';
+import { PropositionCard } from './PropositionCard';
 
-export function PropositionList() {
+interface PropositionListProps {
+  contextId: string;
+}
+
+export function PropositionList({ contextId }: PropositionListProps) {
   const [propositions, setPropositions] = useState<Proposition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPropositions();
-  }, []);
+  }, [contextId]);
 
   const loadPropositions = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getPropositions();
-      setPropositions(data);
+      const data = await getPropositions(contextId);
+      setPropositions(data.propositions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load propositions');
     } finally {
@@ -32,23 +39,25 @@ export function PropositionList() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-  };
+  const handleDelete = async (propositionId: string) => {
+    if (!contextId) return;
+    if (!confirm('Are you sure you want to delete this proposition?')) return;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'green';
-      case 'INACTIVE':
-        return 'gray';
-      case 'DEPRECATED':
-        return 'red';
-      default:
-        return 'gray';
+    setDeletingIds(prev => new Set(prev).add(propositionId));
+    try {
+      await deleteProposition(contextId, propositionId);
+      setPropositions(prev => prev.filter(p => p.id !== propositionId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete proposition');
+    } finally {
+      setDeletingIds(prev => {
+        const next = new Set(prev);
+        next.delete(propositionId);
+        return next;
+      });
     }
   };
+
 
   if (isLoading) {
     return (
@@ -75,16 +84,6 @@ export function PropositionList() {
     );
   }
 
-  if (propositions.length === 0) {
-    return (
-      <Center h="full">
-        <Text fontSize="lg" color="gray.400">
-          No propositions found
-        </Text>
-      </Center>
-    );
-  }
-
   return (
     <VStack gap={0} align="stretch" h="full">
       {/* Header */}
@@ -93,80 +92,41 @@ export function PropositionList() {
           <Text fontSize="xl" fontWeight="bold">
             Propositions ({propositions.length})
           </Text>
+          <IconButton
+            aria-label="Refresh propositions"
+            size="sm"
+            variant="ghost"
+            onClick={() => loadPropositions()}
+            loading={isLoading}
+          >
+            <FiRefreshCw />
+          </IconButton>
         </HStack>
       </Box>
 
       {/* List */}
+      {propositions.length === 0 ? (
+        <Center flex={1}>
+          <Text fontSize="lg" color="gray.400">
+            No propositions found
+          </Text>
+        </Center>
+      ) : (
       <Box flex={1} overflowY="auto" px={6} py={4}>
         <VStack gap={3} align="stretch">
           {propositions.map((proposition) => (
-            <Box
+            <PropositionCard
               key={proposition.id}
-              p={4}
-              borderWidth="1px"
-              borderRadius="md"
-              _hover={{ bg: 'gray.50', _dark: { bg: 'gray.800' } }}
-            >
-              <VStack align="stretch" gap={2}>
-                {/* Header row */}
-                <HStack justify="space-between" wrap="wrap" gap={2}>
-                  <Badge colorPalette={getStatusColor(proposition.status)} size="sm">
-                    {proposition.status}
-                  </Badge>
-                  <HStack gap={2}>
-                    <Badge colorPalette="blue" size="sm">
-                      Level {proposition.level}
-                    </Badge>
-                    <Badge colorPalette="purple" size="sm">
-                      Confidence: {(proposition.confidence * 100).toFixed(0)}%
-                    </Badge>
-                  </HStack>
-                </HStack>
-
-                {/* Main text */}
-                <Text fontSize="md" fontWeight="medium">
-                  {proposition.text}
-                </Text>
-
-                {/* Mentions */}
-                {proposition.mentions.length > 0 && (
-                  <HStack gap={2} wrap="wrap">
-                    <Text fontSize="xs" color="gray.500">
-                      Mentions:
-                    </Text>
-                    {proposition.mentions.map((mention, idx) => (
-                      <Badge key={idx} colorPalette="cyan" size="sm">
-                        {mention.role}: {mention.entityId}
-                      </Badge>
-                    ))}
-                  </HStack>
-                )}
-
-                {/* Reasoning */}
-                {proposition.reasoning && (
-                  <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }}>
-                    <Text as="span" fontWeight="semibold">Reasoning:</Text> {proposition.reasoning}
-                  </Text>
-                )}
-
-                {/* Footer metadata */}
-                <HStack justify="space-between" fontSize="xs" color="gray.500" pt={2}>
-                  <HStack gap={4}>
-                    <Text>ID: {proposition.id.substring(0, 8)}...</Text>
-                    <Text>Context: {proposition.contextId}</Text>
-                  </HStack>
-                  <HStack gap={4}>
-                    <Text>Created: {formatDate(proposition.created)}</Text>
-                    {proposition.grounding.length > 0 && (
-                      <Text>Grounding: {proposition.grounding.length}</Text>
-                    )}
-                  </HStack>
-                </HStack>
-              </VStack>
-            </Box>
+              proposition={proposition}
+              showMetadata={true}
+              showDeleteButton={true}
+              onDelete={handleDelete}
+              isDeleting={deletingIds.has(proposition.id)}
+            />
           ))}
         </VStack>
       </Box>
+      )}
     </VStack>
   );
 }
