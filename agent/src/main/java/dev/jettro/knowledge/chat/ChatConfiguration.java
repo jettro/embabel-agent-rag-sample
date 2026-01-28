@@ -69,12 +69,17 @@ public class ChatConfiguration {
 
     @Bean
     PropositionRepository propositionRepository(ModelProvider modelProvider) {
-        return new InMemoryPropositionRepository(modelProvider.getEmbeddingService(ByRoleModelSelectionCriteria.Companion.byRole(FAST.name())));
+        return new InMemoryPropositionRepository(
+                modelProvider.getEmbeddingService(ByRoleModelSelectionCriteria.Companion.byRole(FAST.name()))
+        );
     }
 
     @Bean
     PropositionPipeline propositionPipeline(
-            PropositionExtractor propositionExtractor, PropositionReviser propositionReviser, PropositionRepository propositionRepository) {
+            PropositionExtractor propositionExtractor,
+            PropositionReviser propositionReviser,
+            PropositionRepository propositionRepository) {
+
         return PropositionPipeline.withExtractor(propositionExtractor)
                 .withRevision(propositionReviser, propositionRepository);
     }
@@ -99,8 +104,7 @@ public class ChatConfiguration {
     }
 
     @Bean
-    PropositionReviser propositionReviser(
-            AiBuilder aiBuilder) {
+    PropositionReviser propositionReviser(AiBuilder aiBuilder) {
         var ai = aiBuilder
                 .withShowPrompts(true)
                 .withShowLlmResponses(true)
