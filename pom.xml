@@ -17,7 +17,8 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <embabel-agent.version>0.3.3-SNAPSHOT</embabel-agent.version>
+        <embabel-agent.version>0.3.3</embabel-agent.version>
+        <embabel-dice.version>0.1.0-SNAPSHOT</embabel-dice.version>
         <spring-boot.version>3.5.9</spring-boot.version>
     </properties>
     

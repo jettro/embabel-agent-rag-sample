@@ -17,11 +17,15 @@ This project serves as both a working application and a reference implementation
 ![Knowledge Agent Chat Interface](docs/screenshot-chatbot-example.png)
 *The chat interface in action - asking questions about Embabel blog posts with real-time agent event monitoring*
 
+![Propositions Management](docs/embabel-dice-at-work.jpg)
+*DICE at work - extracting and managing knowledge propositions with entity mentions, reasoning, and confidence scores*
+
 ## ✨ Features
 
 - **📚 Document Ingestion**: Automatically process and index documents from the `data/` directory using Apache Tika
 - **🔍 Semantic Search**: Leverage Lucene-based vector search to find contextually relevant information
 - **💬 Conversational Interface**: Intuitive chat UI with real-time streaming responses
+- **🧠 Proposition Memory**: Extract and manage structured knowledge propositions from conversations with DICE (Dynamic Insight Capture Engine)
 - **🔐 Authentication**: Spring Security integration with user-aware responses
 - **🎨 Modern UI**: React + TypeScript + Vite with Chakra UI components
 - **🏗️ Production-Ready**: Spring Boot backend optimized for reliability and performance
@@ -152,13 +156,40 @@ This processes all files in the `data/` directory and indexes them for semantic 
 
 The AI assistant will search your documents and provide contextually relevant answers, addressing you by your username.
 
-### 3. Explore the Codebase
+### 3. Managing Propositions
+
+The application includes **DICE (Dynamic Insight Capture Engine)** for extracting and managing structured knowledge propositions from conversations.
+
+**What are Propositions?**
+
+Propositions are structured, factual statements extracted from text that capture knowledge about entities and their relationships. Each proposition includes:
+
+- **Text**: The factual statement (e.g., "Jettro asked for information about blogs about Embabel")
+- **Mentions**: Entities involved with their roles (SUBJECT, OBJECT, etc.)
+- **Confidence**: AI's confidence in the proposition accuracy (0-1)
+- **Decay**: Memory decay factor for time-based relevance
+- **Reasoning**: Explanation of why the proposition was extracted
+- **Status**: ACTIVE, INACTIVE, or DEPRECATED
+
+**Using the Propositions Interface:**
+
+1. Navigate to the **Propositions** tab in the application
+2. View all extracted propositions with their metadata
+3. Use the **Test Extraction Pipeline** to test proposition extraction on custom text
+4. Delete propositions that are no longer relevant
+
+Propositions enable the agent to build long-term memory of user preferences, behaviors, and relationships, making conversations more personalized over time.
+
+### 4. Explore the Codebase
 
 Key files to understand the implementation:
 
 - **`ChatActions.java`** - Core AI action that handles user messages and orchestrates RAG
 - **`IngestController.java`** - Document ingestion and indexing logic
 - **`ChatConfiguration.java`** - Embabel agent configuration
+- **`PropositionCard.tsx`** - Reusable component for displaying propositions
+- **`PropositionList.tsx`** - Proposition management interface
+- **`PropositionExtractor.tsx`** - Test extraction pipeline UI
 - **`App.tsx`** - Frontend application and chat interface
 - **`application.yml`** - Model configuration (GPT models, embeddings)
 
