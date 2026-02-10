@@ -5,13 +5,13 @@ import com.embabel.agent.core.AgentPlatform;
 import com.embabel.agent.core.DataDictionary;
 import com.embabel.agent.core.Verbosity;
 import com.embabel.agent.rag.ingestion.ContentChunker;
-import com.embabel.agent.rag.ingestion.InMemoryContentChunker;
 import com.embabel.agent.rag.ingestion.transform.AddTitlesChunkTransformer;
 import com.embabel.agent.rag.lucene.LuceneSearchOperations;
 import com.embabel.agent.rag.service.NamedEntityDataRepository;
 import com.embabel.agent.rag.service.support.InMemoryNamedEntityDataRepository;
 import com.embabel.chat.Chatbot;
 import com.embabel.chat.agent.AgentProcessChatbot;
+import com.embabel.chat.support.InMemoryConversationFactory;
 import com.embabel.common.ai.model.*;
 import com.embabel.dice.common.EntityResolver;
 import com.embabel.dice.common.SchemaAdherence;
@@ -29,8 +29,6 @@ import com.embabel.dice.proposition.extraction.LlmPropositionExtractor;
 import com.embabel.dice.proposition.revision.LlmPropositionReviser;
 import com.embabel.dice.proposition.revision.PropositionReviser;
 import com.embabel.dice.proposition.store.InMemoryPropositionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import dev.jettro.knowledge.proposition.Product;
 import dev.jettro.knowledge.proposition.ProgrammingLanguage;
 import dev.jettro.knowledge.security.KnowledgeUser;
@@ -39,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import java.nio.file.Path;
 
@@ -53,7 +50,8 @@ public class ChatConfiguration {
 
     @Bean
     Chatbot chatbot(AgentPlatform agentPlatform) {
-        return AgentProcessChatbot.utilityFromPlatform(agentPlatform, new Verbosity().showPrompts());
+        return AgentProcessChatbot.utilityFromPlatform(agentPlatform, new InMemoryConversationFactory(),
+                new Verbosity().withShowPrompts(true));
     }
 
     @Bean
@@ -61,7 +59,7 @@ public class ChatConfiguration {
         return LuceneSearchOperations
                 .withName("sources")
                 .withEmbeddingService(modelProvider.getEmbeddingService(ByRoleModelSelectionCriteria.Companion.byRole(FAST.name())))
-                .withChunkerConfig(new ContentChunker.Config(800,100, 100))
+                .withChunkerConfig(new ContentChunker.Config(800, 100, 100))
                 .withChunkTransformer(AddTitlesChunkTransformer.INSTANCE)
                 .withIndexPath(Path.of("./.lucene-index"))
                 .buildAndLoadChunks();

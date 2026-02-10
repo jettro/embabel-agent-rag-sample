@@ -23,7 +23,7 @@
     <dependencies>
         <dependency>
             <groupId>com.embabel.agent</groupId>
-            <artifactId>embabel-agent-starter</artifactId>
+            <artifactId>embabel-agent-starter-webmvc</artifactId>
             <version>${embabel-agent.version}</version>
         </dependency>
 
@@ -46,7 +46,6 @@
             <version>${embabel-agent.version}</version>
         </dependency>
 
-        <!-- TODO Different than the impromptu sample-->
         <dependency>
             <groupId>com.embabel.dice</groupId>
             <artifactId>dice</artifactId>

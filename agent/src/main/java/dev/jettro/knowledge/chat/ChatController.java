@@ -107,7 +107,7 @@ public class ChatController {
         ChatSession chatSession;
         if (processId == null || processId.isEmpty()) {
             logger.info("Creating new conversation for user: {}", user.getDisplayName());
-            chatSession = chatbot.createSession(user, new SseEmitterOutputChannel(), null);
+            chatSession = chatbot.createSession(user, new SseEmitterOutputChannel(), null, null);
             processId = chatSession.getProcessId();
             user.setProcessId(processId);
         } else {

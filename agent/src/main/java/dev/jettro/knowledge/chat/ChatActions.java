@@ -4,6 +4,7 @@ import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.EmbabelComponent;
 import com.embabel.agent.api.common.ActionContext;
 import com.embabel.agent.api.common.OperationContext;
+import com.embabel.agent.api.tool.Tool;
 import com.embabel.agent.rag.service.SearchOperations;
 import com.embabel.agent.rag.tools.ToolishRag;
 import com.embabel.chat.Conversation;
@@ -11,13 +12,13 @@ import com.embabel.chat.UserMessage;
 import com.embabel.dice.agent.Memory;
 import com.embabel.dice.projection.memory.MemoryProjector;
 import com.embabel.dice.proposition.PropositionRepository;
-import dev.jettro.knowledge.security.CustomUserDetails;
 import dev.jettro.knowledge.security.KnowledgeUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.LinkedList;
 
 import static dev.jettro.knowledge.chat.model.Roles.CHEAPEST;
 
@@ -64,10 +65,14 @@ public class ChatActions {
                     .withRepository(propositionRepository)
                     .withProjector(memoryProjector);
 
+            var tools = new LinkedList<Tool>();
+            tools.add(memory);
+
             logger.info("Received user message as last message: {}", lastUserMessage.getContent());
             var assistantMessage = context.ai()
                     .withLlmByRole(CHEAPEST.name())
-                    .withReferences(toolishRag, memory)
+                    .withTools(tools)
+                    .withReferences(toolishRag) // TODO check if this is still what we need to do in the docs
                     .withSystemPrompt("You are a helpful assistant. Answer questions concisely. Always address the current user by their name: " + user.getDisplayName() + ".")
                     .respond(conversation.getMessages());
 
